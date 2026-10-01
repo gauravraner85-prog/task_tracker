@@ -1,0 +1,175 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with personal preferences and metadata",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "theme": { "type": "string", "enum": ["dark", "midnight", "slate"], "maxLength": 32 },
+        "soundEnabled": { "type": "boolean" },
+        "compactMode": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Habit": {
+      "title": "Habit",
+      "description": "Personal habit or task definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "maxLength": 64 },
+        "color": { "type": "string", "maxLength": 32 },
+        "icon": { "type": "string", "maxLength": 64 },
+        "targetType": { "type": "string", "enum": ["boolean", "numeric", "timer"], "maxLength": 32 },
+        "targetValue": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 32 },
+        "timeOfDay": { "type": "string", "enum": ["morning", "afternoon", "evening", "anytime"], "maxLength": 32 },
+        "targetTime": { "type": "string", "maxLength": 16 },
+        "frequencyDays": { "type": "array" },
+        "cue": { "type": "string", "maxLength": 250 },
+        "isOneTime": { "type": "boolean" },
+        "specificDate": { "type": "string", "maxLength": 16 },
+        "goalId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "archived": { "type": "boolean" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "category", "targetType", "targetValue", "timeOfDay"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "3-Month Target or strategic milestone",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "maxLength": 64 },
+        "color": { "type": "string", "maxLength": 32 },
+        "startDate": { "type": "string", "maxLength": 16 },
+        "targetDate": { "type": "string", "maxLength": 16 },
+        "targetMetricCount": { "type": "number" },
+        "metricUnit": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["active", "completed", "abandoned"], "maxLength": 32 },
+        "linkedHabitIds": { "type": "array" },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "title", "startDate", "targetDate", "targetMetricCount", "metricUnit", "status"]
+    },
+    "HabitEntry": {
+      "title": "HabitEntry",
+      "description": "Daily completion status or metric log for a task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "habitId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 16 },
+        "status": { "type": "string", "enum": ["completed", "missed", "skipped"], "maxLength": 32 },
+        "value": { "type": "number" },
+        "completedAt": { "type": "string", "maxLength": 64 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "userId", "habitId", "date", "status", "value"]
+    },
+    "FocusSession": {
+      "title": "FocusSession",
+      "description": "Logged deep work or study session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "habitId": { "type": "string", "maxLength": 128 },
+        "taskTitle": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 64 },
+        "durationMinutes": { "type": "number" },
+        "completedAt": { "type": "string", "maxLength": 64 },
+        "date": { "type": "string", "maxLength": 16 }
+      },
+      "required": ["id", "userId", "durationMinutes", "completedAt", "date"]
+    },
+    "DailyReflection": {
+      "title": "DailyReflection",
+      "description": "End-of-day reflection and energy check-in",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "maxLength": 16 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "wins": { "type": "string", "maxLength": 1000 },
+        "improvements": { "type": "string", "maxLength": 1000 },
+        "mood": { "type": "string", "enum": ["great", "good", "neutral", "low"], "maxLength": 32 },
+        "energyScore": { "type": "number" }
+      },
+      "required": ["date", "userId"]
+    },
+    "CustomCategory": {
+      "title": "CustomCategory",
+      "description": "User defined task category with icon and color",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "label": { "type": "string", "maxLength": 100 },
+        "icon": { "type": "string", "maxLength": 64 },
+        "color": { "type": "string", "maxLength": 32 },
+        "isCustom": { "type": "boolean" }
+      },
+      "required": ["id", "userId", "label", "icon", "color"]
+    },
+    "UserAchievement": {
+      "title": "UserAchievement",
+      "description": "Earned badge milestone record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "badgeId": { "type": "string", "maxLength": 64 },
+        "unlockedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "badgeId", "unlockedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile and settings"
+    },
+    "/users/{userId}/habits/{habitId}": {
+      "schema": { "$ref": "#/entities/Habit" },
+      "description": "Personal habits and tasks"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/Goal" },
+      "description": "3-Month targets and milestones"
+    },
+    "/users/{userId}/entries/{entryId}": {
+      "schema": { "$ref": "#/entities/HabitEntry" },
+      "description": "Daily completion logs"
+    },
+    "/users/{userId}/focusSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/FocusSession" },
+      "description": "Focus and study sessions"
+    },
+    "/users/{userId}/reflections/{reflectionId}": {
+      "schema": { "$ref": "#/entities/DailyReflection" },
+      "description": "Daily reflections and mood check-ins"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/CustomCategory" },
+      "description": "Custom categories"
+    },
+    "/users/{userId}/achievements/{achievementId}": {
+      "schema": { "$ref": "#/entities/UserAchievement" },
+      "description": "Earned badges"
+    }
+  }
+}

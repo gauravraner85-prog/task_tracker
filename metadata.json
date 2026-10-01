@@ -1,0 +1,6 @@
+{
+  "name": "Komorebi Habit Tracker",
+  "description": "Advanced modern habit tracker with daily, weekly, and monthly progress heatmaps, timing slots, focus timers, habit strength analytics, and motivational visuals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

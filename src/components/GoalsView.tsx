@@ -4,6 +4,7 @@ import { calculateGoalAnalytics } from '../utils/goalAnalytics';
 import { parseDateKey, getTodayKey, getPastNDays, formatDateKey } from '../utils/date';
 import { sound } from '../utils/audio';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
+import { HabitIcon } from './HabitIcon';
 import {
   Target,
   Plus,
@@ -17,6 +18,15 @@ import {
   Calendar,
   Quote,
 } from 'lucide-react';
+
+const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string }> = {
+  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+  sky: { bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400' },
+  indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400' },
+  amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
+  rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400' },
+  teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400' },
+};
 
 interface GoalsViewProps {
   goals: Goal[];
@@ -303,46 +313,75 @@ export function GoalsView({
             </div>
 
             {/* Task Items Checklist */}
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {inspectedDayHabits.length > 0 ? (
                 inspectedDayHabits.map((habit) => {
                   const entry = entries[`${habit.id}_${inspectedDateKey}`];
                   const isDone = entry && entry.status === 'completed';
+                  const colorScheme = COLOR_CLASSES[habit.color] || COLOR_CLASSES.emerald;
 
                   return (
                     <div
                       key={habit.id}
-                      className="p-3 rounded-xl border border-neutral-800 bg-neutral-950/70 hover:border-neutral-700 transition-all flex items-center justify-between gap-3 text-xs"
+                      className={`p-3 md:px-4 md:py-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 text-xs ${
+                        isDone
+                          ? 'bg-neutral-900/40 border-neutral-800/60'
+                          : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700 shadow-sm'
+                      }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Live Checkbox */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Live Checkbox matching home page */}
                         <button
                           type="button"
-                          onClick={() => onToggleComplete(habit, habit.targetValue, inspectedDateKey)}
-                          className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 ${
+                          onClick={() => {
+                            if (isDone) {
+                              sound.playUncheck();
+                              onToggleComplete(habit, 0, inspectedDateKey);
+                            } else {
+                              sound.playCheck();
+                              onToggleComplete(habit, habit.targetValue, inspectedDateKey);
+                            }
+                          }}
+                          aria-label={isDone ? 'Mark incomplete' : 'Mark done'}
+                          className={`w-6 h-6 md:w-7 md:h-7 rounded-lg shrink-0 flex items-center justify-center border transition-all active:scale-90 ${
                             isDone
-                              ? 'bg-emerald-500 border-emerald-500 text-neutral-950 shadow-sm'
-                              : 'bg-neutral-900 border-neutral-700 text-transparent hover:border-emerald-500'
+                              ? 'bg-emerald-500 border-emerald-400 text-neutral-950 shadow-sm shadow-emerald-500/20'
+                              : 'border-neutral-700 bg-neutral-850 hover:border-emerald-500/60 text-transparent hover:text-neutral-500'
                           }`}
                         >
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          {isDone && <Check className="w-4 h-4 stroke-[3]" />}
                         </button>
 
-                        <div className="min-w-0">
+                        {/* Logo / Category Icon like home page */}
+                        <div
+                          className={`w-7 h-7 md:w-8 md:h-8 rounded-lg shrink-0 flex items-center justify-center border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
+                        >
+                          <HabitIcon name={habit.icon} className="w-4 h-4" />
+                        </div>
+
+                        {/* Title and metadata */}
+                        <div className="min-w-0 flex-1">
                           <span
-                            className={`font-semibold text-neutral-100 block truncate ${
-                              isDone ? 'line-through text-neutral-500' : ''
+                            className={`text-sm font-semibold tracking-tight block truncate ${
+                              isDone ? 'text-neutral-400 line-through decoration-neutral-600' : 'text-neutral-100'
                             }`}
                           >
                             {habit.title}
                           </span>
-                          <span className="text-[11px] text-neutral-400 capitalize block">
+                          <span className="text-[11px] text-neutral-400 capitalize block mt-0.5">
                             {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
                           </span>
                         </div>
                       </div>
 
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 shrink-0">
+                      {/* Status Badge */}
+                      <span
+                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full border shrink-0 font-medium ${
+                          isDone
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                            : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                        }`}
+                      >
                         {isDone ? '✓ Completed' : 'Pending'}
                       </span>
                     </div>

@@ -10,38 +10,21 @@ import {
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Habit, Goal, HabitEntry, FocusSession, DailyReflection, CustomCategory } from '../types/habit';
 import { UserBadge } from '../types/achievement';
-import { INITIAL_HABITS, INITIAL_GOALS, DEFAULT_CATEGORIES, generateSeedEntries, generateSeedReflections, generateSeedFocusSessions } from '../data/seedData';
+import { DEFAULT_CATEGORIES } from '../data/seedData';
+import { DUMMY_HABIT_IDS, DUMMY_GOAL_IDS } from './storage';
 
 export async function syncInitialUserDataIfEmpty(userId: string) {
-  const habitsCol = `users/${userId}/habits`;
+  // Only ensure categories exist; NEVER seed dummy habits, goals, entries, or reflections
+  const categoriesCol = `users/${userId}/categories`;
   try {
-    const snap = await getDocs(collection(db, habitsCol));
+    const snap = await getDocs(collection(db, categoriesCol));
     if (snap.empty) {
-      // First-time user: seed personal data
-      for (const h of INITIAL_HABITS) {
-        await setDoc(doc(db, `users/${userId}/habits`, h.id), { ...h, userId });
-      }
-      for (const g of INITIAL_GOALS) {
-        await setDoc(doc(db, `users/${userId}/goals`, g.id), { ...g, userId });
-      }
       for (const c of DEFAULT_CATEGORIES) {
         await setDoc(doc(db, `users/${userId}/categories`, c.id), { ...c, userId });
       }
-      const seedEntries = generateSeedEntries();
-      for (const [key, entry] of Object.entries(seedEntries)) {
-        await setDoc(doc(db, `users/${userId}/entries`, key), { ...entry, userId });
-      }
-      const seedReflections = generateSeedReflections();
-      for (const [date, ref] of Object.entries(seedReflections)) {
-        await setDoc(doc(db, `users/${userId}/reflections`, date), { ...ref, userId });
-      }
-      const seedSessions = generateSeedFocusSessions();
-      for (const sess of seedSessions) {
-        await setDoc(doc(db, `users/${userId}/focusSessions`, sess.id), { ...sess, userId });
-      }
     }
   } catch (err) {
-    handleFirestoreError(err, OperationType.GET, habitsCol);
+    handleFirestoreError(err, OperationType.GET, categoriesCol);
   }
 }
 
@@ -65,7 +48,15 @@ export function subscribeToUserData(
     collection(db, habitsPath),
     (snap) => {
       const items: Habit[] = [];
-      snap.forEach((d) => items.push(d.data() as Habit));
+      snap.forEach((d) => {
+        const h = d.data() as Habit;
+        if (DUMMY_HABIT_IDS.has(h.id) || DUMMY_HABIT_IDS.has(d.id)) {
+          // Purge legacy demo habits from Firestore
+          deleteDoc(doc(db, habitsPath, d.id)).catch(() => {});
+        } else {
+          items.push(h);
+        }
+      });
       items.sort((a, b) => a.order - b.order);
       callbacks.onHabits(items);
     },
@@ -79,7 +70,15 @@ export function subscribeToUserData(
     collection(db, goalsPath),
     (snap) => {
       const items: Goal[] = [];
-      snap.forEach((d) => items.push(d.data() as Goal));
+      snap.forEach((d) => {
+        const g = d.data() as Goal;
+        if (DUMMY_GOAL_IDS.has(g.id) || DUMMY_GOAL_IDS.has(d.id)) {
+          // Purge legacy demo goals from Firestore
+          deleteDoc(doc(db, goalsPath, d.id)).catch(() => {});
+        } else {
+          items.push(g);
+        }
+      });
       callbacks.onGoals(items);
     },
     (err) => handleFirestoreError(err, OperationType.GET, goalsPath)
@@ -93,7 +92,12 @@ export function subscribeToUserData(
     (snap) => {
       const map: Record<string, HabitEntry> = {};
       snap.forEach((d) => {
-        map[d.id] = d.data() as HabitEntry;
+        const entry = d.data() as HabitEntry;
+        if (entry.habitId && DUMMY_HABIT_IDS.has(entry.habitId)) {
+          deleteDoc(doc(db, entriesPath, d.id)).catch(() => {});
+        } else {
+          map[d.id] = entry;
+        }
       });
       callbacks.onEntries(map);
     },

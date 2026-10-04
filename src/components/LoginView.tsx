@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { loginWithGoogle, loginWithEmail, signUpWithEmail } from '../firebase';
-import { Mail, Lock, ArrowRight, Sparkles, AlertCircle, Rocket } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Sparkles, AlertCircle, Rocket, Copy, Check, ExternalLink } from 'lucide-react';
 
 interface LoginViewProps {
   onEnterGuestMode: () => void;
@@ -12,6 +12,18 @@ export function LoginView({ onEnterGuestMode }: LoginViewProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isUnauthorizedDomain = error?.includes('unauthorized-domain');
+
+  const handleCopyHost = () => {
+    if (currentHost) {
+      navigator.clipboard.writeText(currentHost);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -78,9 +90,44 @@ export function LoginView({ onEnterGuestMode }: LoginViewProps) {
         {/* Card */}
         <div className="p-6 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="space-y-3">
+              {isUnauthorizedDomain ? (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2.5">
+                  <div className="flex items-center gap-2 font-bold text-amber-300">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Authorize this Vercel domain in Firebase</span>
+                  </div>
+                  <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                    Firebase requires new hosting domains to be whitelisted before allowing Google Sign-in.
+                  </p>
+                  <div className="p-2 rounded-lg bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] text-emerald-400 truncate">
+                      {currentHost || 'your-app.vercel.app'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyHost}
+                      className="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 flex items-center gap-1 text-[10px] font-mono shrink-0 transition-colors"
+                    >
+                      {copiedDomain ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedDomain ? 'Copied!' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <div className="space-y-1 text-[11px] text-neutral-400">
+                    <p>1. Open <a href="https://console.firebase.google.com/project/gen-lang-client-0827449773/authentication/settings" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline inline-flex items-center gap-0.5">Firebase Console Settings <ExternalLink className="w-2.5 h-2.5" /></a></p>
+                    <p>2. Scroll to <strong>Authorized domains</strong> → click <strong>Add domain</strong>.</p>
+                    <p>3. Paste your domain and click <strong>Save</strong>.</p>
+                  </div>
+                  <div className="pt-1 border-t border-amber-500/20 text-[11px] text-neutral-400">
+                    💡 <em>Tip: You can also sign in right now using <strong>Email & Password</strong> below or continue as <strong>Guest</strong> without waiting!</em>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
             </div>
           )}
 

@@ -24,7 +24,9 @@ export function DailyReflectionCard({
   const [isEditing, setIsEditing] = useState(false);
   const [noteText, setNoteText] = useState(reflection?.note || '');
   const [highlightText, setHighlightText] = useState(reflection?.highlight || '');
-  const [currentEnergy, setCurrentEnergy] = useState<number>(reflection?.energyLevel || 4);
+  const [currentEnergy, setCurrentEnergy] = useState<number>(
+    typeof reflection?.energyLevel === 'number' ? reflection.energyLevel : 4
+  );
 
   const handleMoodSelect = (mood: DailyReflection['mood']) => {
     onSaveReflection(dateKey, { mood, energyLevel: currentEnergy as 1 | 2 | 3 | 4 | 5 });

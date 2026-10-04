@@ -1,21 +1,30 @@
 import { Habit, HabitEntry, DailyReflection, Goal, FocusSession, CustomCategory } from '../types/habit';
-import {
-  INITIAL_HABITS,
-  INITIAL_GOALS,
-  DEFAULT_CATEGORIES,
-  generateSeedEntries,
-  generateSeedReflections,
-  generateSeedFocusSessions,
-} from '../data/seedData';
+import { DEFAULT_CATEGORIES } from '../data/seedData';
 
 const STORAGE_KEYS = {
-  HABITS: 'horizon_habits_v6',
-  GOALS: 'horizon_goals_v6',
-  ENTRIES: 'horizon_entries_v6',
-  REFLECTIONS: 'horizon_reflections_v6',
-  SESSIONS: 'horizon_sessions_v6',
-  CATEGORIES: 'horizon_categories_v6',
+  HABITS: 'horizon_habits_v7',
+  GOALS: 'horizon_goals_v7',
+  ENTRIES: 'horizon_entries_v7',
+  REFLECTIONS: 'horizon_reflections_v7',
+  SESSIONS: 'horizon_sessions_v7',
+  CATEGORIES: 'horizon_categories_v7',
 };
+
+// Known demo / seed IDs to permanently purge
+export const DUMMY_HABIT_IDS = new Set([
+  'habit_1',
+  'habit_2',
+  'habit_3',
+  'habit_4',
+  'habit_5',
+  'habit_6',
+]);
+
+export const DUMMY_GOAL_IDS = new Set([
+  'goal_q4_fitness',
+  'goal_deep_work',
+  'goal_mind_reading',
+]);
 
 export function loadCategories(): CustomCategory[] {
   try {
@@ -44,7 +53,21 @@ export function loadHabits(): Habit[] {
     const raw = localStorage.getItem(STORAGE_KEYS.HABITS);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((h) => !DUMMY_HABIT_IDS.has(h.id));
+        return cleaned;
+      }
+    }
+    // Also check older v6 key and purge any demo habits if migrating
+    const rawV6 = localStorage.getItem('horizon_habits_v6');
+    if (rawV6 !== null) {
+      const parsed = JSON.parse(rawV6);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((h) => !DUMMY_HABIT_IDS.has(h.id));
+        saveHabits(cleaned);
+        localStorage.removeItem('horizon_habits_v6');
+        return cleaned;
+      }
     }
   } catch {
     // fallback
@@ -54,7 +77,8 @@ export function loadHabits(): Habit[] {
 
 export function saveHabits(habits: Habit[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits));
+    const cleaned = habits.filter((h) => !DUMMY_HABIT_IDS.has(h.id));
+    localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(cleaned));
   } catch {
     // ignore
   }
@@ -65,7 +89,20 @@ export function loadGoals(): Goal[] {
     const raw = localStorage.getItem(STORAGE_KEYS.GOALS);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((g) => !DUMMY_GOAL_IDS.has(g.id));
+        return cleaned;
+      }
+    }
+    const rawV6 = localStorage.getItem('horizon_goals_v6');
+    if (rawV6 !== null) {
+      const parsed = JSON.parse(rawV6);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((g) => !DUMMY_GOAL_IDS.has(g.id));
+        saveGoals(cleaned);
+        localStorage.removeItem('horizon_goals_v6');
+        return cleaned;
+      }
     }
   } catch {
     // fallback
@@ -75,7 +112,8 @@ export function loadGoals(): Goal[] {
 
 export function saveGoals(goals: Goal[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
+    const cleaned = goals.filter((g) => !DUMMY_GOAL_IDS.has(g.id));
+    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(cleaned));
   } catch {
     // ignore
   }
@@ -86,7 +124,16 @@ export function loadEntries(): Record<string, HabitEntry> {
     const raw = localStorage.getItem(STORAGE_KEYS.ENTRIES);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed;
+      if (parsed && typeof parsed === 'object') {
+        const cleaned: Record<string, HabitEntry> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          const entry = v as HabitEntry;
+          if (entry && !DUMMY_HABIT_IDS.has(entry.habitId)) {
+            cleaned[k] = entry;
+          }
+        }
+        return cleaned;
+      }
     }
   } catch {
     // fallback
@@ -96,7 +143,13 @@ export function loadEntries(): Record<string, HabitEntry> {
 
 export function saveEntries(entries: Record<string, HabitEntry>): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
+    const cleaned: Record<string, HabitEntry> = {};
+    for (const [k, v] of Object.entries(entries)) {
+      if (v && !DUMMY_HABIT_IDS.has(v.habitId)) {
+        cleaned[k] = v;
+      }
+    }
+    localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(cleaned));
   } catch {
     // ignore
   }
@@ -107,7 +160,9 @@ export function loadFocusSessions(): FocusSession[] {
     const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((s) => !s.taskId || !DUMMY_HABIT_IDS.has(s.taskId));
+      }
     }
   } catch {
     // fallback
@@ -117,7 +172,8 @@ export function loadFocusSessions(): FocusSession[] {
 
 export function saveFocusSessions(sessions: FocusSession[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    const cleaned = sessions.filter((s) => !s.taskId || !DUMMY_HABIT_IDS.has(s.taskId));
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(cleaned));
   } catch {
     // ignore
   }
@@ -154,11 +210,11 @@ export function exportBackupJSON(
 ): string {
   return JSON.stringify(
     {
-      version: 5,
+      version: 7,
       exportedAt: new Date().toISOString(),
       categories,
-      goals,
-      habits,
+      goals: goals.filter((g) => !DUMMY_GOAL_IDS.has(g.id)),
+      habits: habits.filter((h) => !DUMMY_HABIT_IDS.has(h.id)),
       entries,
       reflections,
       focusSessions,
@@ -168,31 +224,26 @@ export function exportBackupJSON(
   );
 }
 
-export function resetToSeedData(): {
-  habits: Habit[];
-  goals: Goal[];
-  entries: Record<string, HabitEntry>;
-  reflections: Record<string, DailyReflection>;
-  focusSessions: FocusSession[];
-  categories: CustomCategory[];
-} {
-  localStorage.removeItem(STORAGE_KEYS.HABITS);
-  localStorage.removeItem(STORAGE_KEYS.GOALS);
-  localStorage.removeItem(STORAGE_KEYS.ENTRIES);
-  localStorage.removeItem(STORAGE_KEYS.REFLECTIONS);
-  localStorage.removeItem(STORAGE_KEYS.SESSIONS);
-  localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
-  const habits = INITIAL_HABITS;
-  const goals = INITIAL_GOALS;
-  const entries = generateSeedEntries();
-  const reflections = generateSeedReflections();
-  const focusSessions = generateSeedFocusSessions();
-  const categories = DEFAULT_CATEGORIES;
-  saveHabits(habits);
-  saveGoals(goals);
-  saveEntries(entries);
-  saveReflections(reflections);
-  saveFocusSessions(focusSessions);
-  saveCategories(categories);
-  return { habits, goals, entries, reflections, focusSessions, categories };
+export function resetAllLocalData(): void {
+  try {
+    Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
+    localStorage.removeItem('horizon_habits_v6');
+    localStorage.removeItem('horizon_goals_v6');
+    localStorage.removeItem('horizon_entries_v6');
+    localStorage.removeItem('komorebi_habits_v5');
+  } catch {
+    // ignore
+  }
+}
+
+export function resetToSeedData() {
+  resetAllLocalData();
+  return {
+    categories: DEFAULT_CATEGORIES,
+    habits: [] as Habit[],
+    goals: [] as Goal[],
+    entries: {} as Record<string, HabitEntry>,
+    reflections: {} as Record<string, DailyReflection>,
+    focusSessions: [] as FocusSession[],
+  };
 }

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Habit, HabitEntry } from '../types/habit';
+import { Habit, HabitEntry, Goal } from '../types/habit';
 import { getMonthDays, parseDateKey, formatDateKey, getPastNDays, getTodayKey } from '../utils/date';
 import { HabitIcon } from './HabitIcon';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, AlertCircle, Target } from 'lucide-react';
 
 interface MonthViewProps {
   habits: Habit[];
+  goals?: Goal[];
   entries: Record<string, HabitEntry>;
   onSelectDate: (dateKey: string) => void;
   onOpenNewHabit: () => void;
@@ -13,6 +14,7 @@ interface MonthViewProps {
 
 export function MonthView({
   habits,
+  goals = [],
   entries,
   onSelectDate,
   onOpenNewHabit,
@@ -21,8 +23,17 @@ export function MonthView({
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDayKey, setSelectedDayKey] = useState<string>(getTodayKey());
+  const [selectedTargetId, setSelectedTargetId] = useState<string>('all');
 
   const activeHabits = habits.filter((h) => !h.archived);
+
+  // Filter habits by target if selected
+  const displayedHabits = activeHabits.filter((h) => {
+    if (selectedTargetId === 'all') return true;
+    const goal = goals.find((g) => g.id === selectedTargetId);
+    return h.goalId === selectedTargetId || goal?.linkedHabitIds?.includes(h.id);
+  });
+
   const calendarDays = getMonthDays(year, month);
 
   const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -63,7 +74,7 @@ export function MonthView({
     let completed = 0;
     let missed = 0;
 
-    activeHabits.forEach((habit) => {
+    displayedHabits.forEach((habit) => {
       if (habit.frequencyDays.includes(dayOfWeek)) {
         scheduled++;
         const entry = entries[`${habit.id}_${day.key}`];
@@ -90,7 +101,7 @@ export function MonthView({
   // Selected Day Detailed Breakdown
   const selectedDateObj = parseDateKey(selectedDayKey);
   const selectedDayOfWeek = selectedDateObj.getDay();
-  const selectedDayHabits = activeHabits.filter((h) => h.frequencyDays.includes(selectedDayOfWeek));
+  const selectedDayHabits = displayedHabits.filter((h) => h.frequencyDays.includes(selectedDayOfWeek));
 
   // Trailing 12-week GitHub style activity heatmap
   const trailing84Keys = getPastNDays(84); // 12 weeks
@@ -162,6 +173,44 @@ export function MonthView({
           </div>
         </div>
       </div>
+
+      {/* Target Scope Filter Bar */}
+      {goals.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs text-neutral-400 flex items-center gap-1 shrink-0 font-mono">
+            <Target className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Scope:</span>
+          </span>
+          <button
+            onClick={() => setSelectedTargetId('all')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+              selectedTargetId === 'all'
+                ? 'bg-neutral-800 border-emerald-500/60 text-emerald-300 font-bold shadow-sm'
+                : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            All Tasks ({activeHabits.length})
+          </button>
+          {goals.map((g) => {
+            const count = activeHabits.filter((h) => h.goalId === g.id || g.linkedHabitIds?.includes(h.id)).length;
+            const isSelected = selectedTargetId === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => setSelectedTargetId(g.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-neutral-800 border-emerald-500/60 text-emerald-300 font-bold shadow-sm'
+                    : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-neutral-500'}`} />
+                <span>{g.title} ({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main Grid: Calendar on Left, Selected Day Inspector on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

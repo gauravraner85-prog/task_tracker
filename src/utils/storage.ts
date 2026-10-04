@@ -9,12 +9,12 @@ import {
 } from '../data/seedData';
 
 const STORAGE_KEYS = {
-  HABITS: 'komorebi_habits_v5',
-  GOALS: 'komorebi_goals_v5',
-  ENTRIES: 'komorebi_entries_v5',
-  REFLECTIONS: 'komorebi_reflections_v5',
-  SESSIONS: 'komorebi_sessions_v5',
-  CATEGORIES: 'komorebi_categories_v5',
+  HABITS: 'horizon_habits_v6',
+  GOALS: 'horizon_goals_v6',
+  ENTRIES: 'horizon_entries_v6',
+  REFLECTIONS: 'horizon_reflections_v6',
+  SESSIONS: 'horizon_sessions_v6',
+  CATEGORIES: 'horizon_categories_v6',
 };
 
 export function loadCategories(): CustomCategory[] {
@@ -42,15 +42,14 @@ export function saveCategories(categories: CustomCategory[]): void {
 export function loadHabits(): Habit[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.HABITS);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {
     // fallback
   }
-  saveHabits(INITIAL_HABITS);
-  return INITIAL_HABITS;
+  return [];
 }
 
 export function saveHabits(habits: Habit[]): void {
@@ -64,15 +63,14 @@ export function saveHabits(habits: Habit[]): void {
 export function loadGoals(): Goal[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.GOALS);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch {
     // fallback
   }
-  saveGoals(INITIAL_GOALS);
-  return INITIAL_GOALS;
+  return [];
 }
 
 export function saveGoals(goals: Goal[]): void {
@@ -86,16 +84,14 @@ export function saveGoals(goals: Goal[]): void {
 export function loadEntries(): Record<string, HabitEntry> {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') return parsed;
     }
   } catch {
     // fallback
   }
-  const initial = generateSeedEntries();
-  saveEntries(initial);
-  return initial;
+  return {};
 }
 
 export function saveEntries(entries: Record<string, HabitEntry>): void {
@@ -109,16 +105,14 @@ export function saveEntries(entries: Record<string, HabitEntry>): void {
 export function loadFocusSessions(): FocusSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed;
     }
   } catch {
     // fallback
   }
-  const initial = generateSeedFocusSessions();
-  saveFocusSessions(initial);
-  return initial;
+  return [];
 }
 
 export function saveFocusSessions(sessions: FocusSession[]): void {
@@ -132,16 +126,14 @@ export function saveFocusSessions(sessions: FocusSession[]): void {
 export function loadReflections(): Record<string, DailyReflection> {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.REFLECTIONS);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') return parsed;
     }
   } catch {
     // fallback
   }
-  const initial = generateSeedReflections();
-  saveReflections(initial);
-  return initial;
+  return {};
 }
 
 export function saveReflections(reflections: Record<string, DailyReflection>): void {

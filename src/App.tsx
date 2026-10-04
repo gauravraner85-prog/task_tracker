@@ -36,13 +36,14 @@ import {
 import { getTodayKey } from './utils/date';
 import { sound } from './utils/audio';
 import { fireConfetti } from './utils/confetti';
-import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { TodayView } from './components/TodayView';
 import { GoalsView } from './components/GoalsView';
 import { WeekView } from './components/WeekView';
 import { MonthView } from './components/MonthView';
 import { AnalyticsView } from './components/AnalyticsView';
-import { MindsetHub } from './components/MindsetHub';
+import { TimerView } from './components/TimerView';
+import { MindsetView } from './components/MindsetView';
 import { HabitFormModal } from './components/HabitFormModal';
 import { GoalFormModal } from './components/GoalFormModal';
 import { CategoryManagerModal } from './components/CategoryManagerModal';
@@ -53,7 +54,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { ProfileView } from './components/ProfileView';
 import { SettingsView } from './components/SettingsView';
 import { LoginView } from './components/LoginView';
-import { CheckCircle2, Target, Calendar, BarChart3, Sparkles } from 'lucide-react';
+import { CheckCircle2, Target, Calendar, BarChart3, Sparkles, User as UserIcon, Plus, Rocket, Clock, Brain } from 'lucide-react';
 
 export default function App() {
   // Authentication & Guest State
@@ -71,14 +72,45 @@ export default function App() {
   const [unlockedBadges, setUnlockedBadges] = useState<Record<string, UserBadge>>({});
 
   // Navigation & Date
-  const [currentTab, setCurrentTab] = useState<'today' | 'goals' | 'week' | 'month' | 'analytics' | 'mindset' | 'profile' | 'settings'>('today');
+  const [currentTab, setCurrentTab] = useState<'today' | 'goals' | 'timer' | 'mindset' | 'week' | 'month' | 'analytics' | 'profile' | 'settings'>('today');
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() => getTodayKey());
+
+  // Background Focus Timer State
+  const [timerMode, setTimerMode] = useState<'pomodoro' | 'countdown' | 'stopwatch'>('pomodoro');
+  const [timerDuration, setTimerDuration] = useState<number>(25 * 60);
+  const [timeRemaining, setTimeRemaining] = useState<number>(25 * 60);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const [timerActiveHabitId, setTimerActiveHabitId] = useState<string | null>(null);
+
+  // Background timer interval
+  useEffect(() => {
+    let interval: any = null;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (timerMode === 'stopwatch') {
+            return prev + 1;
+          } else {
+            if (prev <= 1) {
+              sound.playCelebration();
+              setIsTimerRunning(false);
+              return 0;
+            }
+            return prev - 1;
+          }
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timerMode]);
+
+  const timerFormatted = `${Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:${(timeRemaining % 60).toString().padStart(2, '0')}`;
 
   // Preferences & Settings
   const [settings, setSettings] = useState<{
     soundEnabled: boolean;
     confettiEnabled: boolean;
-    theme: 'dark' | 'midnight' | 'slate';
+    theme: 'dark' | 'greenish' | 'midnight' | 'slate' | 'amethyst' | 'ember';
     compactMode: boolean;
   }>({
     soundEnabled: true,
@@ -423,38 +455,80 @@ export default function App() {
   // Theme styling background
   const themeBg =
     settings.theme === 'midnight'
-      ? 'bg-[#080d1a]'
+      ? 'bg-black text-neutral-100'
+      : settings.theme === 'greenish'
+      ? 'bg-[#03120c] text-emerald-50'
       : settings.theme === 'slate'
-      ? 'bg-[#050f0c]'
-      : 'bg-neutral-950';
+      ? 'bg-[#040d13] text-neutral-100'
+      : settings.theme === 'amethyst'
+      ? 'bg-[#0e0717] text-purple-50'
+      : settings.theme === 'ember'
+      ? 'bg-[#140707] text-rose-50'
+      : 'bg-neutral-950 text-neutral-100';
 
   return (
-    <div className={`min-h-screen ${themeBg} text-neutral-100 flex flex-col selection:bg-emerald-500/20 selection:text-emerald-300 transition-colors duration-300`}>
-      {/* Top Header */}
-      <Header
-        currentTab={currentTab}
-        onSelectTab={setCurrentTab}
-        user={currentUser}
-        unlockedBadgesCount={Object.keys(unlockedBadges).length}
-        onOpenAchievements={() => setIsAchievementsOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenNewHabit={() => {
-          setEditingHabit(null);
-          setIsHabitModalOpen(true);
-        }}
-        onOpenNewGoal={() => {
-          setEditingGoal(null);
-          setIsGoalModalOpen(true);
-        }}
-        onOpenCategories={() => setIsCategoryModalOpen(true)}
-        onLogin={() => loginWithGoogle()}
-        onLogout={handleLogout}
-        onResetData={handleResetData}
-        onExportData={handleExportData}
-      />
+    <div className={`min-h-screen theme-${settings.theme} ${themeBg} flex selection:bg-emerald-500/20 selection:text-emerald-300 transition-colors duration-300`}>
+      {/* Left Navigation Sidebar for Desktop & Tablets */}
+      <div className="hidden md:block shrink-0">
+        <Sidebar
+          currentTab={currentTab}
+          onSelectTab={setCurrentTab}
+          user={currentUser}
+          unlockedBadgesCount={Object.keys(unlockedBadges).length}
+          currentTheme={settings.theme}
+          onSelectTheme={(t) => setSettings((prev) => ({ ...prev, theme: t }))}
+          onOpenAchievements={() => setIsAchievementsOpen(true)}
+          onOpenCategories={() => setIsCategoryModalOpen(true)}
+          onOpenNewHabit={() => {
+            setEditingHabit(null);
+            setIsHabitModalOpen(true);
+          }}
+          onOpenNewGoal={() => {
+            setEditingGoal(null);
+            setIsGoalModalOpen(true);
+          }}
+          onLogin={() => loginWithGoogle()}
+          onLogout={handleLogout}
+          isTimerRunning={isTimerRunning}
+          timerFormatted={timerFormatted}
+        />
+      </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-5 pb-24 md:pb-10">
+      {/* Main Workspace Column */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
+        {/* Mobile Top Bar */}
+        <div className="md:hidden sticky top-0 z-30 bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm">
+              <Rocket className="w-3.5 h-3.5 fill-emerald-400/20" />
+            </div>
+            <span className="font-bold text-neutral-100 text-sm">Horizon</span>
+            {isTimerRunning && (
+              <button
+                onClick={() => setCurrentTab('timer')}
+                className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono font-bold animate-pulse"
+              >
+                ⏱️ {timerFormatted}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setEditingHabit(null);
+                setIsHabitModalOpen(true);
+              }}
+              className="px-2.5 py-1 bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs rounded-lg flex items-center gap-1 shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Task</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 lg:px-8 py-5 pb-24 md:pb-10">
         {currentTab === 'today' && (
           <TodayView
             habits={habits}
@@ -469,8 +543,8 @@ export default function App() {
             onMarkMissed={handleMarkMissed}
             onMarkSkipped={handleMarkSkipped}
             onOpenTimer={(habit) => {
-              setFocusTask(habit || null);
-              setIsFocusTrackerOpen(true);
+              if (habit) setTimerActiveHabitId(habit.id);
+              setCurrentTab('timer');
             }}
             onSaveFocusSession={handleSaveFocusSession}
             onEditHabit={(habit) => {
@@ -488,8 +562,68 @@ export default function App() {
               setIsGoalModalOpen(true);
             }}
             onGoToGoalsTab={() => setCurrentTab('goals')}
-            onGoToMindsetTab={() => setCurrentTab('mindset')}
             onGoToAnalyticsTab={() => setCurrentTab('analytics')}
+            onGoToTimerTab={() => setCurrentTab('timer')}
+            onGoToMindsetTab={() => setCurrentTab('mindset')}
+            isCloudSynced={!!currentUser}
+          />
+        )}
+
+        {currentTab === 'timer' && (
+          <TimerView
+            habits={habits}
+            activeHabitId={timerActiveHabitId}
+            isRunning={isTimerRunning}
+            mode={timerMode}
+            timeRemaining={timeRemaining}
+            totalDuration={timerDuration}
+            onToggleTimer={() => setIsTimerRunning((prev) => !prev)}
+            onResetTimer={() => {
+              setIsTimerRunning(false);
+              setTimeRemaining(timerMode === 'stopwatch' ? 0 : timerDuration);
+            }}
+            onSetMode={(m) => {
+              setTimerMode(m);
+              setIsTimerRunning(false);
+              if (m === 'pomodoro') {
+                setTimerDuration(25 * 60);
+                setTimeRemaining(25 * 60);
+              } else if (m === 'countdown') {
+                setTimerDuration(25 * 60);
+                setTimeRemaining(25 * 60);
+              } else {
+                setTimerDuration(0);
+                setTimeRemaining(0);
+              }
+            }}
+            onSetDuration={(mins) => {
+              const secs = mins * 60;
+              setTimerDuration(secs);
+              setTimeRemaining(secs);
+              setIsTimerRunning(false);
+            }}
+            onSelectHabit={(hId) => setTimerActiveHabitId(hId)}
+            onCompleteSession={(durationMins, habitId) => {
+              const h = habits.find((item) => item.id === habitId);
+              handleSaveFocusSession({
+                taskId: habitId,
+                taskTitle: h ? h.title : 'Deep Focus Session',
+                category: h ? h.category : 'productivity',
+                durationMinutes: durationMins,
+                date: getTodayKey(),
+              });
+            }}
+            pastSessions={focusSessions}
+          />
+        )}
+
+        {currentTab === 'mindset' && (
+          <MindsetView
+            reflections={reflections}
+            selectedDateKey={selectedDateKey}
+            onSelectDateKey={setSelectedDateKey}
+            onSaveReflection={handleSaveReflection}
+            isCloudSynced={!!currentUser}
           />
         )}
 
@@ -552,6 +686,7 @@ export default function App() {
         {currentTab === 'week' && (
           <WeekView
             habits={habits}
+            goals={goals}
             entries={entries}
             onToggleComplete={handleToggleComplete}
             onOpenNewHabit={() => {
@@ -564,6 +699,7 @@ export default function App() {
         {currentTab === 'month' && (
           <MonthView
             habits={habits}
+            goals={goals}
             entries={entries}
             onSelectDate={(dateKey) => {
               setSelectedDateKey(dateKey);
@@ -579,18 +715,12 @@ export default function App() {
         {currentTab === 'analytics' && (
           <AnalyticsView
             habits={habits}
+            goals={goals}
             entries={entries}
             onOpenNewHabit={() => {
               setEditingHabit(null);
               setIsHabitModalOpen(true);
             }}
-          />
-        )}
-
-        {currentTab === 'mindset' && (
-          <MindsetHub
-            totalCompletions={totalCompleted}
-            longestStreak={maxActiveStreak}
           />
         )}
 
@@ -625,13 +755,14 @@ export default function App() {
       </main>
 
       {/* Mobile Ergonomic Bottom Tab Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800 grid grid-cols-5 items-center h-16 px-1">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800 grid grid-cols-6 items-center h-16 px-1">
         {[
           { id: 'today', label: 'Tasks', icon: CheckCircle2 },
           { id: 'goals', label: 'Targets', icon: Target },
-          { id: 'week', label: 'Week', icon: Calendar },
+          { id: 'timer', label: 'Timer', icon: Clock },
+          { id: 'mindset', label: 'Mindset', icon: Brain },
           { id: 'analytics', label: 'Stats', icon: BarChart3 },
-          { id: 'mindset', label: 'Mindset', icon: Sparkles },
+          { id: 'profile', label: 'Profile', icon: UserIcon },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = currentTab === tab.id;
@@ -648,6 +779,7 @@ export default function App() {
             </button>
           );
         })}
+      </div>
       </div>
 
       {/* Achievements Digital Badges Modal */}

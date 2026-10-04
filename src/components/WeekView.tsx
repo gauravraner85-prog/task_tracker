@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Habit, HabitEntry } from '../types/habit';
+import { Habit, HabitEntry, Goal } from '../types/habit';
 import { getWeekDays, parseDateKey, formatDateKey, getTodayKey } from '../utils/date';
 import { HabitIcon } from './HabitIcon';
 import { sound } from '../utils/audio';
-import { ChevronLeft, ChevronRight, Check, X, PauseCircle, Calendar, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, X, PauseCircle, Calendar, Sparkles, Target } from 'lucide-react';
 
 interface WeekViewProps {
   habits: Habit[];
+  goals?: Goal[];
   entries: Record<string, HabitEntry>;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
   onOpenNewHabit: () => void;
@@ -14,13 +15,22 @@ interface WeekViewProps {
 
 export function WeekView({
   habits,
+  goals = [],
   entries,
   onToggleComplete,
   onOpenNewHabit,
 }: WeekViewProps) {
   const [currentWeekRef, setCurrentWeekRef] = useState<string>(getTodayKey());
+  const [selectedTargetId, setSelectedTargetId] = useState<string>('all');
   const weekDays = getWeekDays(currentWeekRef);
   const activeHabits = habits.filter((h) => !h.archived);
+
+  // Filter habits by target if selected
+  const displayedHabits = activeHabits.filter((h) => {
+    if (selectedTargetId === 'all') return true;
+    const goal = goals.find((g) => g.id === selectedTargetId);
+    return h.goalId === selectedTargetId || goal?.linkedHabitIds?.includes(h.id);
+  });
 
   // Navigate weeks
   const handlePrevWeek = () => {
@@ -45,7 +55,7 @@ export function WeekView({
     let scheduled = 0;
     let completed = 0;
 
-    activeHabits.forEach((habit) => {
+    displayedHabits.forEach((habit) => {
       if (habit.frequencyDays.includes(dayOfWeek)) {
         scheduled++;
         const entry = entries[`${habit.id}_${day.key}`];
@@ -127,6 +137,44 @@ export function WeekView({
         </div>
       </div>
 
+      {/* Target Scope Filter Bar */}
+      {goals.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs text-neutral-400 flex items-center gap-1 shrink-0 font-mono">
+            <Target className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Scope:</span>
+          </span>
+          <button
+            onClick={() => setSelectedTargetId('all')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+              selectedTargetId === 'all'
+                ? 'bg-neutral-800 border-emerald-500/60 text-emerald-300 font-bold shadow-sm'
+                : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            All Tasks ({activeHabits.length})
+          </button>
+          {goals.map((g) => {
+            const count = activeHabits.filter((h) => h.goalId === g.id || g.linkedHabitIds?.includes(h.id)).length;
+            const isSelected = selectedTargetId === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => setSelectedTargetId(g.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-neutral-800 border-emerald-500/60 text-emerald-300 font-bold shadow-sm'
+                    : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-neutral-500'}`} />
+                <span>{g.title} ({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* 7-Day Matrix Table */}
       <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -158,8 +206,8 @@ export function WeekView({
             </thead>
 
             <tbody className="divide-y divide-neutral-800/60 text-xs">
-              {activeHabits.length > 0 ? (
-                activeHabits.map((habit) => {
+              {displayedHabits.length > 0 ? (
+                displayedHabits.map((habit) => {
                   let habitWeekCompleted = 0;
                   let habitWeekScheduled = 0;
 

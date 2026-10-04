@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
-import { loginWithGoogle } from '../firebase';
-import {
-  Sparkles,
-  Target,
-  Flame,
-  CheckCircle2,
-  Clock,
-  Shield,
-  Award,
-  ArrowRight,
-} from 'lucide-react';
+import { loginWithGoogle, loginWithEmail, signUpWithEmail } from '../firebase';
+import { Mail, Lock, ArrowRight, Sparkles, AlertCircle, Rocket } from 'lucide-react';
 
 interface LoginViewProps {
   onEnterGuestMode: () => void;
 }
 
 export function LoginView({ onEnterGuestMode }: LoginViewProps) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,99 +19,127 @@ export function LoginView({ onEnterGuestMode }: LoginViewProps) {
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      console.error('Sign-in error:', err);
-      setError(err?.message || 'Failed to sign in with Google. Please try again.');
+      console.error('Google Sign-in error:', err);
+      setError(err?.message || 'Failed to sign in with Google.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError('Please provide both email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email.trim(), password);
+      } else {
+        await loginWithEmail(email.trim(), password);
+      }
+    } catch (err: any) {
+      console.error('Email auth error:', err);
+      let msg = err?.message || 'Authentication failed. Please check credentials.';
+      if (msg.includes('user-not-found') || msg.includes('invalid-credential') || msg.includes('wrong-password')) {
+        msg = 'Invalid email or password.';
+      } else if (msg.includes('email-already-in-use')) {
+        msg = 'An account with this email already exists. Please sign in.';
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
-      {/* Background ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md relative z-10 space-y-7 text-center">
-        {/* Brand Logo */}
-        <div className="space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto shadow-lg shadow-emerald-500/10">
-            <Sparkles className="w-7 h-7" />
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-center items-center px-4 py-8 relative">
+      <div className="w-full max-w-sm space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mx-auto shadow-sm">
+            <Rocket className="w-6 h-6 fill-emerald-400/20" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-100">
-            Komorebi Execution
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-100">
+            {isSignUp ? 'Create your account' : 'Welcome to Horizon'}
           </h1>
-          <p className="text-xs md:text-sm text-neutral-400 max-w-sm mx-auto">
-            High-discipline personal operating system for daily habits, 3-month target milestones, and study focus.
+          <p className="text-xs text-neutral-400">
+            {isSignUp ? 'Start tracking habits and targets' : 'Sign in to access your habits, targets, and streaks'}
           </p>
         </div>
 
-        {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-2 gap-2 text-left text-xs">
-          <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
-            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>70/30 Workspace</span>
-            </div>
-            <p className="text-[11px] text-neutral-400 leading-tight">
-              Distraction-free task list with side stopwatch & countdown targets.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
-            <div className="flex items-center gap-1.5 text-indigo-400 font-semibold">
-              <Flame className="w-3.5 h-3.5" />
-              <span>LeetCode Grid</span>
-            </div>
-            <p className="text-[11px] text-neutral-400 leading-tight">
-              16-week contribution heatmap of green squares for daily momentum.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
-            <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-              <Award className="w-3.5 h-3.5" />
-              <span>Achievements</span>
-            </div>
-            <p className="text-[11px] text-neutral-400 leading-tight">
-              Unlock 13 digital milestone badges as you conquer daily streaks.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
-            <div className="flex items-center gap-1.5 text-sky-400 font-semibold">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Firebase Cloud</span>
-            </div>
-            <p className="text-[11px] text-neutral-400 leading-tight">
-              Personalized private Firestore synchronization across all devices.
-            </p>
-          </div>
-        </div>
-
-        {/* Auth CTA Card */}
+        {/* Card */}
         <div className="p-6 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
-          <div className="space-y-1">
-            <h2 className="text-sm font-bold text-neutral-200">
-              Sign In to Your Workspace
-            </h2>
-            <p className="text-xs text-neutral-400">
-              Only you have access to your private tasks, targets, and streaks.
-            </p>
-          </div>
-
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-left">
-              {error}
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* Google Sign In Button */}
+          {/* 1. Email / Password Form (FIRST) */}
+          <form onSubmit={handleEmailAuth} className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-mono text-neutral-400 block">Email address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-3 top-3 text-neutral-500 pointer-events-none" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-mono text-neutral-400 block">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-neutral-500 pointer-events-none" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs transition-colors shadow-sm disabled:opacity-50 mt-1"
+            >
+              {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+            </button>
+          </form>
+
+          {/* 2. Divider */}
+          <div className="relative flex items-center justify-center my-3">
+            <div className="w-full border-t border-neutral-800" />
+            <span className="bg-neutral-900 px-3 text-[11px] text-neutral-500 uppercase font-mono">
+              or continue with Google
+            </span>
+          </div>
+
+          {/* 3. Google Sign-in (BELOW Email & Password) */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs md:text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-md disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs flex items-center justify-center gap-2.5 transition-all shadow-sm disabled:opacity-50"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
@@ -137,25 +159,39 @@ export function LoginView({ onEnterGuestMode }: LoginViewProps) {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>{loading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            <span>Continue with Google</span>
           </button>
 
-          {/* Guest preview option */}
-          <div className="pt-2">
+          {/* Toggle between Sign In and Sign Up */}
+          <div className="pt-2 text-center text-xs">
             <button
               type="button"
-              onClick={onEnterGuestMode}
-              className="text-xs text-neutral-400 hover:text-emerald-400 flex items-center justify-center gap-1 mx-auto transition-colors"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError(null);
+              }}
+              className="text-neutral-400 hover:text-emerald-400 transition-colors"
             >
-              <span>Explore workspace in demo mode</span>
-              <ArrowRight className="w-3 h-3" />
+              {isSignUp ? (
+                <span>Already have an account? <strong className="text-emerald-400">Sign in</strong></span>
+              ) : (
+                <span>Don&apos;t have an account? <strong className="text-emerald-400">Sign up</strong></span>
+              )}
             </button>
           </div>
         </div>
 
-        <p className="text-[11px] text-neutral-500">
-          Secured with Google Firebase Authentication & Zero-Trust Firestore Security Rules.
-        </p>
+        {/* Demo Mode Link */}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onEnterGuestMode}
+            className="text-xs text-neutral-500 hover:text-neutral-300 flex items-center justify-center gap-1.5 mx-auto transition-colors font-mono"
+          >
+            <span>Explore in demo mode</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

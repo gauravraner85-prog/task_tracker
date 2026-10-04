@@ -19,7 +19,7 @@ interface SettingsModalProps {
   settings: {
     soundEnabled: boolean;
     confettiEnabled: boolean;
-    theme: 'dark' | 'midnight' | 'slate';
+    theme: 'dark' | 'greenish' | 'midnight' | 'slate' | 'amethyst' | 'ember';
     compactMode: boolean;
   };
   onUpdateSettings: (newSettings: Partial<SettingsModalProps['settings']>) => void;
@@ -97,11 +97,14 @@ export function SettingsModal({
           <label className="block text-xs font-semibold text-neutral-300">
             Dark Mode Palette
           </label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[
-              { id: 'dark', label: 'OLED Pure Black', bg: 'bg-black border-neutral-800' },
-              { id: 'midnight', label: 'Midnight Indigo', bg: 'bg-[#0b0f19] border-indigo-950' },
-              { id: 'slate', label: 'Obsidian Emerald', bg: 'bg-[#08120e] border-emerald-950' },
+              { id: 'dark', label: 'Dark Forest', bg: 'bg-neutral-900 border-neutral-700' },
+              { id: 'greenish', label: 'Emerald Sage', bg: 'bg-[#03120c] border-emerald-800' },
+              { id: 'midnight', label: 'Obsidian OLED', bg: 'bg-black border-neutral-800' },
+              { id: 'slate', label: 'Cyberpunk Slate', bg: 'bg-[#040d13] border-[#123347]' },
+              { id: 'amethyst', label: 'Royal Amethyst', bg: 'bg-[#0e0717] border-[#351a54]' },
+              { id: 'ember', label: 'Crimson Ember', bg: 'bg-[#140707] border-[#441a1a]' },
             ].map((t) => (
               <button
                 key={t.id}

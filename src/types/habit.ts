@@ -58,8 +58,8 @@ export interface FocusSession {
 
 export interface DailyReflection {
   date: string; // YYYY-MM-DD
-  mood?: 'great' | 'good' | 'neutral' | 'low' | 'tough';
-  energyLevel?: 1 | 2 | 3 | 4 | 5;
+  mood?: 'great' | 'good' | 'neutral' | 'low' | 'tough' | 'energized' | 'focused' | 'calm' | 'tired' | 'stressed' | string;
+  energyLevel?: 1 | 2 | 3 | 4 | 5 | 'low' | 'medium' | 'high' | number;
   note?: string;
   highlight?: string;
 }

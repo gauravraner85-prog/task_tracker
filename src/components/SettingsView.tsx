@@ -28,7 +28,7 @@ interface SettingsViewProps {
   settings: {
     soundEnabled: boolean;
     confettiEnabled: boolean;
-    theme: 'dark' | 'midnight' | 'slate';
+    theme: 'dark' | 'greenish' | 'midnight' | 'slate' | 'amethyst' | 'ember';
     compactMode: boolean;
   };
   categories: CustomCategory[];
@@ -77,7 +77,7 @@ export function SettingsView({
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono text-neutral-400 px-3 py-1 rounded-lg bg-neutral-900 border border-neutral-800">
-            Komorebi v2.6 Pro
+            Horizon v3.0 Pro
           </span>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function SettingsView({
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             {
               id: 'dark' as const,
@@ -101,18 +101,39 @@ export function SettingsView({
               accent: 'bg-emerald-400',
             },
             {
+              id: 'greenish' as const,
+              name: 'Emerald Sage',
+              desc: 'Deep rich organic green tint throughout backgrounds',
+              bgClass: 'bg-[#03120c] border-emerald-900',
+              accent: 'bg-emerald-500',
+            },
+            {
               id: 'midnight' as const,
               name: 'Obsidian Midnight',
               desc: 'Deepest pure pitch black for OLED displays',
               bgClass: 'bg-black border-neutral-850',
-              accent: 'bg-indigo-400',
+              accent: 'bg-sky-400',
             },
             {
               id: 'slate' as const,
               name: 'Cyberpunk Slate',
               desc: 'Dark cyan hues with high contrast typography',
-              bgClass: 'bg-[#050f0c] border-[#0c241d]',
+              bgClass: 'bg-[#040d13] border-[#123347]',
               accent: 'bg-teal-400',
+            },
+            {
+              id: 'amethyst' as const,
+              name: 'Royal Amethyst',
+              desc: 'Deep luxury violet tones with purple glow',
+              bgClass: 'bg-[#0e0717] border-[#351a54]',
+              accent: 'bg-purple-500',
+            },
+            {
+              id: 'ember' as const,
+              name: 'Crimson Ember',
+              desc: 'Deep ruby and rose tones for high intensity',
+              bgClass: 'bg-[#140707] border-[#441a1a]',
+              accent: 'bg-rose-500',
             },
           ].map((th) => {
             const isSelected = settings.theme === th.id;

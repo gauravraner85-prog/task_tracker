@@ -1,6 +1,6 @@
 {
-  "name": "Komorebi Habit Tracker",
-  "description": "Advanced modern habit tracker with daily, weekly, and monthly progress heatmaps, timing slots, focus timers, habit strength analytics, and motivational visuals.",
+  "name": "Horizon",
+  "description": "High-discipline personal operating system for daily habits, targets, timeline chains, focus timers, and progress analytics.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

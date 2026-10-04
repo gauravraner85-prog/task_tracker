@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User,
@@ -81,6 +83,24 @@ export async function loginWithGoogle() {
     return await signInWithPopup(auth, googleProvider);
   } catch (error) {
     console.error('Google Sign-In failed', error);
+    throw error;
+  }
+}
+
+export async function loginWithEmail(email: string, pass: string) {
+  try {
+    return await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error) {
+    console.error('Email Sign-In failed', error);
+    throw error;
+  }
+}
+
+export async function signUpWithEmail(email: string, pass: string) {
+  try {
+    return await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (error) {
+    console.error('Email Sign-Up failed', error);
     throw error;
   }
 }

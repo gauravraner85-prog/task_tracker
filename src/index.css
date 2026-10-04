@@ -3,15 +3,183 @@
 :root {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Default Dark Forest Theme */
+  --app-bg: #0a0a0a;
+  --surface-card: #141414;
+  --surface-card-subtle: #1a1a1a;
+  --surface-border: #262626;
+  --surface-hover: #222222;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --accent-color: #10b981;
 }
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--app-bg);
+  color: var(--text-primary);
 }
 
 .font-mono, .tabular-nums {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* Theme 1: Greenish / Emerald Forest */
+.theme-greenish {
+  --app-bg: #03120c;
+  --surface-card: #082117;
+  --surface-card-subtle: #0d2e20;
+  --surface-border: #13422e;
+  --surface-hover: #164e37;
+  --text-primary: #e6fbf2;
+  --text-secondary: #7fba9f;
+  --accent-color: #10b981;
+}
+
+/* Theme 2: Obsidian Midnight (OLED True Black) */
+.theme-midnight {
+  --app-bg: #000000;
+  --surface-card: #0a0a0a;
+  --surface-card-subtle: #141414;
+  --surface-border: #202020;
+  --surface-hover: #1c1c1c;
+  --text-primary: #ffffff;
+  --text-secondary: #8c8c8c;
+  --accent-color: #38bdf8;
+}
+
+/* Theme 3: Cyberpunk Slate / Teal */
+.theme-slate {
+  --app-bg: #040d13;
+  --surface-card: #071923;
+  --surface-card-subtle: #0c2331;
+  --surface-border: #123347;
+  --surface-hover: #173f57;
+  --text-primary: #e3f3fa;
+  --text-secondary: #729cb0;
+  --accent-color: #06b6d4;
+}
+
+/* Theme 4: Royal Amethyst / Violet */
+.theme-amethyst {
+  --app-bg: #0e0717;
+  --surface-card: #170c26;
+  --surface-card-subtle: #221237;
+  --surface-border: #351a54;
+  --surface-hover: #3d2060;
+  --text-primary: #f6edff;
+  --text-secondary: #aa8fc4;
+  --accent-color: #a855f7;
+}
+
+/* Theme 5: Crimson Ember / Ruby */
+.theme-ember {
+  --app-bg: #140707;
+  --surface-card: #200c0c;
+  --surface-card-subtle: #2d1212;
+  --surface-border: #441a1a;
+  --surface-hover: #502121;
+  --text-primary: #ffeded;
+  --text-secondary: #c48f8f;
+  --accent-color: #f43f5e;
+}
+
+/* Theme 6: Dark Forest (Default) */
+.theme-dark {
+  --app-bg: #0a0a0a;
+  --surface-card: #141414;
+  --surface-card-subtle: #1a1a1a;
+  --surface-border: #262626;
+  --surface-hover: #222222;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --accent-color: #10b981;
+}
+
+/* Deep theme dynamic overrides for all UI elements */
+.theme-greenish, .theme-midnight, .theme-slate, .theme-amethyst, .theme-ember {
+  background-color: var(--app-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-greenish .bg-neutral-950,
+.theme-midnight .bg-neutral-950,
+.theme-slate .bg-neutral-950,
+.theme-amethyst .bg-neutral-950,
+.theme-ember .bg-neutral-950 {
+  background-color: var(--app-bg) !important;
+}
+
+.theme-greenish .bg-neutral-900,
+.theme-greenish .bg-neutral-900\/60,
+.theme-greenish .bg-neutral-900\/70,
+.theme-greenish .bg-neutral-900\/80,
+.theme-greenish .bg-neutral-900\/90,
+.theme-midnight .bg-neutral-900,
+.theme-midnight .bg-neutral-900\/60,
+.theme-midnight .bg-neutral-900\/70,
+.theme-midnight .bg-neutral-900\/80,
+.theme-midnight .bg-neutral-900\/90,
+.theme-slate .bg-neutral-900,
+.theme-slate .bg-neutral-900\/60,
+.theme-slate .bg-neutral-900\/70,
+.theme-slate .bg-neutral-900\/80,
+.theme-slate .bg-neutral-900\/90,
+.theme-amethyst .bg-neutral-900,
+.theme-amethyst .bg-neutral-900\/60,
+.theme-amethyst .bg-neutral-900\/70,
+.theme-amethyst .bg-neutral-900\/80,
+.theme-amethyst .bg-neutral-900\/90,
+.theme-ember .bg-neutral-900,
+.theme-ember .bg-neutral-900\/60,
+.theme-ember .bg-neutral-900\/70,
+.theme-ember .bg-neutral-900\/80,
+.theme-ember .bg-neutral-900\/90 {
+  background-color: var(--surface-card) !important;
+}
+
+.theme-greenish .bg-neutral-800,
+.theme-midnight .bg-neutral-800,
+.theme-slate .bg-neutral-800,
+.theme-amethyst .bg-neutral-800,
+.theme-ember .bg-neutral-800 {
+  background-color: var(--surface-card-subtle) !important;
+}
+
+.theme-greenish .border-neutral-800,
+.theme-greenish .border-neutral-800\/80,
+.theme-greenish .border-neutral-850,
+.theme-midnight .border-neutral-800,
+.theme-midnight .border-neutral-800\/80,
+.theme-midnight .border-neutral-850,
+.theme-slate .border-neutral-800,
+.theme-slate .border-neutral-800\/80,
+.theme-slate .border-neutral-850,
+.theme-amethyst .border-neutral-800,
+.theme-amethyst .border-neutral-800\/80,
+.theme-amethyst .border-neutral-850,
+.theme-ember .border-neutral-800,
+.theme-ember .border-neutral-800\/80,
+.theme-ember .border-neutral-850 {
+  border-color: var(--surface-border) !important;
+}
+
+.theme-greenish .text-neutral-100,
+.theme-midnight .text-neutral-100,
+.theme-slate .text-neutral-100,
+.theme-amethyst .text-neutral-100,
+.theme-ember .text-neutral-100 {
+  color: var(--text-primary) !important;
+}
+
+.theme-greenish .text-neutral-400,
+.theme-midnight .text-neutral-400,
+.theme-slate .text-neutral-400,
+.theme-amethyst .text-neutral-400,
+.theme-ember .text-neutral-400 {
+  color: var(--text-secondary) !important;
 }
 
 /* Custom subtle scrollbars */

@@ -87,7 +87,7 @@ export function ProfileView({
                 />
               ) : (
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-2xl shadow-md">
-                  {user?.email ? user.email[0].toUpperCase() : '木'}
+                  {user?.email ? user.email[0].toUpperCase() : 'H'}
                 </div>
               )}
               {user && (

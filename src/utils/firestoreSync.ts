@@ -234,6 +234,15 @@ export async function saveGoalToFirestore(userId: string, goal: Goal) {
   }
 }
 
+export async function deleteGoalFromFirestore(userId: string, goalId: string) {
+  const path = `users/${userId}/goals/${goalId}`;
+  try {
+    await deleteDoc(doc(db, `users/${userId}/goals`, goalId));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
+  }
+}
+
 export async function saveEntryToFirestore(userId: string, entry: HabitEntry) {
   const path = `users/${userId}/entries/${entry.id}`;
   try {

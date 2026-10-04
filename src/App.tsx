@@ -26,6 +26,7 @@ import {
   saveHabitToFirestore,
   deleteHabitFromFirestore,
   saveGoalToFirestore,
+  deleteGoalFromFirestore,
   saveEntryToFirestore,
   saveFocusSessionToFirestore,
   saveReflectionToFirestore,
@@ -425,6 +426,14 @@ export default function App() {
     setEditingGoal(null);
   };
 
+  const handleDeleteGoal = (goalId: string) => {
+    const nextGoals = goals.filter((g) => g.id !== goalId);
+    setGoals(nextGoals);
+    saveGoals(nextGoals);
+    if (currentUser) deleteGoalFromFirestore(currentUser.uid, goalId);
+    sound.playCheck();
+  };
+
   const handleSaveCategory = (newCat: CustomCategory) => {
     const nextCategories = [...categories, newCat];
     setCategories(nextCategories);
@@ -697,6 +706,7 @@ export default function App() {
               setEditingGoal(goal);
               setIsGoalModalOpen(true);
             }}
+            onDeleteGoal={handleDeleteGoal}
             onOpenNewHabitForGoal={(goalId) => {
               const targetGoal = goals.find((g) => g.id === goalId);
               const targetCatId = targetGoal?.category || categories[0]?.id || 'productivity';
@@ -717,6 +727,11 @@ export default function App() {
               });
               setIsHabitModalOpen(true);
             }}
+            onEditHabit={(habit) => {
+              setEditingHabit(habit);
+              setIsHabitModalOpen(true);
+            }}
+            onDeleteHabit={handleDeleteHabit}
             onToggleComplete={handleToggleComplete}
             onSaveGoalNotes={(goalId, noteText) => {
               const updatedGoals = goals.map((g) => {

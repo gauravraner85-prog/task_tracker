@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Clock,
   Edit3,
+  Trash2,
   ListTodo,
   Check,
   Calendar,
@@ -40,7 +41,10 @@ interface GoalsViewProps {
   selectedDateKey: string;
   onOpenNewGoal: () => void;
   onEditGoal: (goal: Goal) => void;
+  onDeleteGoal: (goalId: string) => void;
   onOpenNewHabitForGoal: (goalId: string) => void;
+  onEditHabit: (habit: Habit) => void;
+  onDeleteHabit: (habitId: string) => void;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
   onSaveGoalNotes?: (goalId: string, noteText: string) => void;
 }
@@ -53,7 +57,10 @@ export function GoalsView({
   selectedDateKey,
   onOpenNewGoal,
   onEditGoal,
+  onDeleteGoal,
   onOpenNewHabitForGoal,
+  onEditHabit,
+  onDeleteHabit,
   onToggleComplete,
 }: GoalsViewProps) {
   const activeGoals = goals.filter((g) => g.status === 'active');
@@ -223,13 +230,43 @@ export function GoalsView({
           })}
         </div>
 
-        <button
-          onClick={onOpenNewGoal}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold rounded-lg text-xs transition-colors shrink-0 shadow-sm"
-        >
-          <Plus className="w-3.5 h-3.5 stroke-[3]" />
-          <span>Add Target</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {currentGoal && (
+            <>
+              <button
+                type="button"
+                onClick={() => onEditGoal(currentGoal)}
+                title={`Edit "${currentGoal.title}"`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 rounded-lg text-xs font-semibold transition-colors"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Edit Target</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete target "${currentGoal.title}"?`)) {
+                    onDeleteGoal(currentGoal.id);
+                  }
+                }}
+                title={`Delete "${currentGoal.title}"`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-rose-500/15 text-neutral-400 hover:text-rose-400 border border-neutral-800 hover:border-rose-500/30 rounded-lg text-xs font-semibold transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Delete Target</span>
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={onOpenNewGoal}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold rounded-lg text-xs transition-colors shrink-0 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <span>Add Target</span>
+          </button>
+        </div>
       </div>
 
       {/* 2-COLUMN LAYOUT:
@@ -386,16 +423,44 @@ export function GoalsView({
                         </div>
                       </div>
 
-                      {/* Status Badge */}
-                      <span
-                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full border shrink-0 font-medium ${
-                          isDone
-                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                            : 'bg-neutral-900 text-neutral-400 border-neutral-800'
-                        }`}
-                      >
-                        {isDone ? '✓ Completed' : 'Pending'}
-                      </span>
+                      {/* Actions & Status Badge */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`text-[10px] font-mono px-2.5 py-1 rounded-full border font-medium ${
+                            isDone
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                              : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                          }`}
+                        >
+                          {isDone ? '✓ Completed' : 'Pending'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditHabit(habit);
+                          }}
+                          title={`Edit "${habit.title}"`}
+                          className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white text-neutral-400 flex items-center justify-center transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete task "${habit.title}"?`)) {
+                              onDeleteHabit(habit.id);
+                            }
+                          }}
+                          title={`Delete "${habit.title}"`}
+                          className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-rose-500/15 hover:border-rose-500/30 hover:text-rose-400 text-neutral-400 flex items-center justify-center transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })

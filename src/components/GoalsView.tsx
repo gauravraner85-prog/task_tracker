@@ -5,6 +5,8 @@ import { parseDateKey, getTodayKey, getPastNDays, formatDateKey } from '../utils
 import { sound } from '../utils/audio';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
 import { HabitIcon } from './HabitIcon';
+import { resolveHabitVisuals } from '../utils/habitVisuals';
+import { CustomCategory } from '../types/habit';
 import {
   Target,
   Plus,
@@ -26,12 +28,15 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string }
   amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
   rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400' },
   teal: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400' },
+  violet: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
+  orange: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
 };
 
 interface GoalsViewProps {
   goals: Goal[];
   habits: Habit[];
   entries: Record<string, HabitEntry>;
+  categories?: CustomCategory[];
   selectedDateKey: string;
   onOpenNewGoal: () => void;
   onEditGoal: (goal: Goal) => void;
@@ -44,6 +49,7 @@ export function GoalsView({
   goals,
   habits,
   entries,
+  categories = [],
   selectedDateKey,
   onOpenNewGoal,
   onEditGoal,
@@ -318,7 +324,8 @@ export function GoalsView({
                 inspectedDayHabits.map((habit) => {
                   const entry = entries[`${habit.id}_${inspectedDateKey}`];
                   const isDone = entry && entry.status === 'completed';
-                  const colorScheme = COLOR_CLASSES[habit.color] || COLOR_CLASSES.emerald;
+                  const visuals = resolveHabitVisuals(habit, categories);
+                  const colorScheme = COLOR_CLASSES[visuals.color] || COLOR_CLASSES.emerald;
 
                   return (
                     <div
@@ -356,7 +363,7 @@ export function GoalsView({
                         <div
                           className={`w-7 h-7 md:w-8 md:h-8 rounded-lg shrink-0 flex items-center justify-center border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
                         >
-                          <HabitIcon name={habit.icon} className="w-4 h-4" />
+                          <HabitIcon name={visuals.icon} className="w-4 h-4" />
                         </div>
 
                         {/* Title and metadata */}
@@ -368,9 +375,14 @@ export function GoalsView({
                           >
                             {habit.title}
                           </span>
-                          <span className="text-[11px] text-neutral-400 capitalize block mt-0.5">
-                            {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border font-medium ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}>
+                              {visuals.categoryLabel}
+                            </span>
+                            <span className="text-[11px] text-neutral-400 capitalize">
+                              · {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
+                            </span>
+                          </div>
                         </div>
                       </div>
 

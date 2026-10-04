@@ -5,13 +5,45 @@ import {
   deleteDoc,
   onSnapshot,
   getDocs,
-  query,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Habit, Goal, HabitEntry, FocusSession, DailyReflection, CustomCategory } from '../types/habit';
 import { UserBadge } from '../types/achievement';
 import { DEFAULT_CATEGORIES } from '../data/seedData';
-import { DUMMY_HABIT_IDS, DUMMY_GOAL_IDS } from './storage';
+import {
+  DUMMY_HABIT_IDS,
+  DUMMY_GOAL_IDS,
+  saveHabits,
+  saveGoals,
+  saveEntries,
+  saveFocusSessions,
+  saveReflections,
+  saveCategories,
+} from './storage';
+
+/**
+ * Strips out `undefined` fields recursively.
+ * In Firestore, passing `undefined` in setDoc will throw a fatal error
+ * which prevents habits, goals, and entries from saving!
+ */
+export function cleanDocData<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        !(value instanceof Date)
+      ) {
+        result[key] = cleanDocData(value);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}
 
 export async function syncInitialUserDataIfEmpty(userId: string) {
   // Only ensure categories exist; NEVER seed dummy habits, goals, entries, or reflections
@@ -20,7 +52,7 @@ export async function syncInitialUserDataIfEmpty(userId: string) {
     const snap = await getDocs(collection(db, categoriesCol));
     if (snap.empty) {
       for (const c of DEFAULT_CATEGORIES) {
-        await setDoc(doc(db, `users/${userId}/categories`, c.id), { ...c, userId });
+        await setDoc(doc(db, `users/${userId}/categories`, c.id), cleanDocData({ ...c, userId }));
       }
     }
   } catch (err) {
@@ -59,6 +91,7 @@ export function subscribeToUserData(
       });
       items.sort((a, b) => a.order - b.order);
       callbacks.onHabits(items);
+      saveHabits(items);
     },
     (err) => handleFirestoreError(err, OperationType.GET, habitsPath)
   );
@@ -73,13 +106,13 @@ export function subscribeToUserData(
       snap.forEach((d) => {
         const g = d.data() as Goal;
         if (DUMMY_GOAL_IDS.has(g.id) || DUMMY_GOAL_IDS.has(d.id)) {
-          // Purge legacy demo goals from Firestore
           deleteDoc(doc(db, goalsPath, d.id)).catch(() => {});
         } else {
           items.push(g);
         }
       });
       callbacks.onGoals(items);
+      saveGoals(items);
     },
     (err) => handleFirestoreError(err, OperationType.GET, goalsPath)
   );
@@ -100,6 +133,7 @@ export function subscribeToUserData(
         }
       });
       callbacks.onEntries(map);
+      saveEntries(map);
     },
     (err) => handleFirestoreError(err, OperationType.GET, entriesPath)
   );
@@ -112,8 +146,8 @@ export function subscribeToUserData(
     (snap) => {
       const items: FocusSession[] = [];
       snap.forEach((d) => items.push(d.data() as FocusSession));
-      items.sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
       callbacks.onFocusSessions(items);
+      saveFocusSessions(items);
     },
     (err) => handleFirestoreError(err, OperationType.GET, sessionsPath)
   );
@@ -129,6 +163,7 @@ export function subscribeToUserData(
         map[d.id] = d.data() as DailyReflection;
       });
       callbacks.onReflections(map);
+      saveReflections(map);
     },
     (err) => handleFirestoreError(err, OperationType.GET, reflectionsPath)
   );
@@ -141,7 +176,9 @@ export function subscribeToUserData(
     (snap) => {
       const items: CustomCategory[] = [];
       snap.forEach((d) => items.push(d.data() as CustomCategory));
-      callbacks.onCategories(items.length > 0 ? items : DEFAULT_CATEGORIES);
+      const finalCats = items.length > 0 ? items : DEFAULT_CATEGORIES;
+      callbacks.onCategories(finalCats);
+      saveCategories(finalCats);
     },
     (err) => handleFirestoreError(err, OperationType.GET, categoriesPath)
   );
@@ -171,7 +208,8 @@ export function subscribeToUserData(
 export async function saveHabitToFirestore(userId: string, habit: Habit) {
   const path = `users/${userId}/habits/${habit.id}`;
   try {
-    await setDoc(doc(db, `users/${userId}/habits`, habit.id), { ...habit, userId });
+    const payload = cleanDocData({ ...habit, userId });
+    await setDoc(doc(db, `users/${userId}/habits`, habit.id), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -189,7 +227,8 @@ export async function deleteHabitFromFirestore(userId: string, habitId: string) 
 export async function saveGoalToFirestore(userId: string, goal: Goal) {
   const path = `users/${userId}/goals/${goal.id}`;
   try {
-    await setDoc(doc(db, `users/${userId}/goals`, goal.id), { ...goal, userId });
+    const payload = cleanDocData({ ...goal, userId });
+    await setDoc(doc(db, `users/${userId}/goals`, goal.id), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -198,7 +237,8 @@ export async function saveGoalToFirestore(userId: string, goal: Goal) {
 export async function saveEntryToFirestore(userId: string, entry: HabitEntry) {
   const path = `users/${userId}/entries/${entry.id}`;
   try {
-    await setDoc(doc(db, `users/${userId}/entries`, entry.id), { ...entry, userId });
+    const payload = cleanDocData({ ...entry, userId });
+    await setDoc(doc(db, `users/${userId}/entries`, entry.id), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -207,7 +247,8 @@ export async function saveEntryToFirestore(userId: string, entry: HabitEntry) {
 export async function saveFocusSessionToFirestore(userId: string, session: FocusSession) {
   const path = `users/${userId}/focusSessions/${session.id}`;
   try {
-    await setDoc(doc(db, `users/${userId}/focusSessions`, session.id), { ...session, userId });
+    const payload = cleanDocData({ ...session, userId });
+    await setDoc(doc(db, `users/${userId}/focusSessions`, session.id), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -216,7 +257,8 @@ export async function saveFocusSessionToFirestore(userId: string, session: Focus
 export async function saveReflectionToFirestore(userId: string, reflection: DailyReflection) {
   const path = `users/${userId}/reflections/${reflection.date}`;
   try {
-    await setDoc(doc(db, `users/${userId}/reflections`, reflection.date), { ...reflection, userId });
+    const payload = cleanDocData({ ...reflection, userId });
+    await setDoc(doc(db, `users/${userId}/reflections`, reflection.date), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -225,7 +267,8 @@ export async function saveReflectionToFirestore(userId: string, reflection: Dail
 export async function saveCategoryToFirestore(userId: string, category: CustomCategory) {
   const path = `users/${userId}/categories/${category.id}`;
   try {
-    await setDoc(doc(db, `users/${userId}/categories`, category.id), { ...category, userId });
+    const payload = cleanDocData({ ...category, userId });
+    await setDoc(doc(db, `users/${userId}/categories`, category.id), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -243,12 +286,13 @@ export async function deleteCategoryFromFirestore(userId: string, categoryId: st
 export async function saveAchievementToFirestore(userId: string, badgeId: string) {
   const path = `users/${userId}/achievements/${badgeId}`;
   try {
-    await setDoc(doc(db, `users/${userId}/achievements`, badgeId), {
+    const payload = cleanDocData({
       id: badgeId,
       badgeId,
       userId,
       unlockedAt: new Date().toISOString(),
     });
+    await setDoc(doc(db, `users/${userId}/achievements`, badgeId), payload);
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }

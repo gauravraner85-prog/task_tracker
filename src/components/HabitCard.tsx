@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Habit, HabitEntry, Goal } from '../types/habit';
+import { Habit, HabitEntry, Goal, CustomCategory } from '../types/habit';
 import { HabitIcon } from './HabitIcon';
+import { resolveHabitVisuals } from '../utils/habitVisuals';
 import {
   Check,
   Flame,
@@ -21,6 +22,7 @@ interface HabitCardProps {
   habit: Habit;
   entry?: HabitEntry;
   linkedGoal?: Goal;
+  categories?: CustomCategory[];
   currentStreak: number;
   habitStrength: number;
   onToggleComplete: (habit: Habit, value?: number) => void;
@@ -68,12 +70,25 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
     text: 'text-teal-400',
     dot: 'bg-teal-400',
   },
+  violet: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+    dot: 'bg-purple-400',
+  },
+  orange: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    dot: 'bg-amber-400',
+  },
 };
 
 export function HabitCard({
   habit,
   entry,
   linkedGoal,
+  categories = [],
   currentStreak,
   habitStrength,
   onToggleComplete,
@@ -84,7 +99,8 @@ export function HabitCard({
   onDeleteHabit,
 }: HabitCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const colorScheme = COLOR_CLASSES[habit.color] || COLOR_CLASSES.emerald;
+  const visuals = resolveHabitVisuals(habit, categories);
+  const colorScheme = COLOR_CLASSES[visuals.color] || COLOR_CLASSES.emerald;
 
   const isCompleted = entry?.status === 'completed';
   const isMissed = entry?.status === 'missed';
@@ -165,7 +181,7 @@ export function HabitCard({
           <div
             className={`w-7 h-7 md:w-8 md:h-8 rounded-lg shrink-0 flex items-center justify-center border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
           >
-            <HabitIcon name={habit.icon} className="w-4 h-4" />
+            <HabitIcon name={visuals.icon} className="w-4 h-4" />
           </div>
 
           {/* Task Title ONLY (Clean, bold, high contrast) */}

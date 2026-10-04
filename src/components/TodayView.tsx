@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Habit, HabitEntry, DailyReflection, TimeOfDay, Goal, FocusSession } from '../types/habit';
+import { Habit, HabitEntry, DailyReflection, TimeOfDay, Goal, FocusSession, CustomCategory } from '../types/habit';
 import { HabitCard } from './HabitCard';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
@@ -27,6 +27,7 @@ interface TodayViewProps {
   entries: Record<string, HabitEntry>;
   focusSessions: FocusSession[];
   reflections: Record<string, DailyReflection>;
+  categories?: CustomCategory[];
   selectedDateKey: string;
   onSelectDateKey: (dateKey: string) => void;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
@@ -54,6 +55,7 @@ export function TodayView({
   entries,
   focusSessions,
   reflections,
+  categories = [],
   selectedDateKey,
   onSelectDateKey,
   onToggleComplete,
@@ -238,6 +240,7 @@ export function TodayView({
                     habit={habit}
                     entry={entry}
                     linkedGoal={linkedGoal}
+                    categories={categories}
                     currentStreak={stats.currentStreak}
                     habitStrength={stats.habitStrength}
                     onToggleComplete={onToggleComplete}

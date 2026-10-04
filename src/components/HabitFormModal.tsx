@@ -26,11 +26,11 @@ export function HabitFormModal({
 }: HabitFormModalProps) {
   const [title, setTitle] = useState(initialHabit?.title || '');
   const [description, setDescription] = useState(initialHabit?.description || '');
-  const [category, setCategory] = useState<HabitCategory>(
-    initialHabit?.category || categories[0]?.id || 'productivity'
-  );
-  const [color, setColor] = useState(initialHabit?.color || 'emerald');
-  const [icon, setIcon] = useState(initialHabit?.icon || 'Target');
+  const defaultCatId = initialHabit?.category || categories[0]?.id || 'productivity';
+  const defaultCatObj = categories.find((c) => c.id === defaultCatId);
+  const [category, setCategory] = useState<HabitCategory>(defaultCatId);
+  const [color, setColor] = useState(initialHabit?.color || defaultCatObj?.color || 'emerald');
+  const [icon, setIcon] = useState(initialHabit?.icon || defaultCatObj?.icon || 'Target');
   const [targetType, setTargetType] = useState<TargetType>(initialHabit?.targetType || 'boolean');
   const [targetValue, setTargetValue] = useState(initialHabit?.targetValue || 1);
   const [unit, setUnit] = useState(initialHabit?.unit || '');

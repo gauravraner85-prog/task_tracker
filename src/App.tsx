@@ -36,6 +36,7 @@ import {
 import { getTodayKey } from './utils/date';
 import { sound } from './utils/audio';
 import { fireConfetti } from './utils/confetti';
+import { resolveHabitVisuals } from './utils/habitVisuals';
 import { Sidebar } from './components/Sidebar';
 import { TodayView } from './components/TodayView';
 import { GoalsView } from './components/GoalsView';
@@ -60,7 +61,20 @@ export default function App() {
   // Authentication & Guest State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
-  const [guestMode, setGuestMode] = useState(false);
+  const [guestMode, setGuestMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('horizon_guest_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleEnterGuestMode = () => {
+    try {
+      localStorage.setItem('horizon_guest_mode', 'true');
+    } catch {}
+    setGuestMode(true);
+  };
 
   // App Data
   const [categories, setCategories] = useState<CustomCategory[]>(() => loadCategories());
@@ -265,13 +279,28 @@ export default function App() {
 
   // Quick Task Add
   const handleQuickAddTask = (title: string) => {
-    const defaultCat = categories[0]?.id || 'productivity';
+    const dummyHabit: Habit = {
+      id: '',
+      title,
+      category: 'productivity',
+      color: 'emerald',
+      icon: 'Target',
+      targetType: 'boolean',
+      targetValue: 1,
+      timeOfDay: 'anytime',
+      frequencyDays: [0, 1, 2, 3, 4, 5, 6],
+      createdAt: '',
+      order: 0,
+    };
+    const visuals = resolveHabitVisuals(dummyHabit, categories);
+    const matchedCat = categories.find((c) => c.icon === visuals.icon) || categories[0];
+
     const newTask: Habit = {
       id: `task_${Date.now()}`,
       title,
-      category: defaultCat,
-      color: 'emerald',
-      icon: 'Target',
+      category: matchedCat?.id || 'productivity',
+      color: visuals.color,
+      icon: visuals.icon,
       targetType: 'boolean',
       targetValue: 1,
       timeOfDay: 'anytime',
@@ -324,12 +353,33 @@ export default function App() {
   const handleSaveHabit = (habitData: Omit<Habit, 'id' | 'createdAt' | 'order'> & { id?: string }) => {
     let nextHabits: Habit[];
     let savedHabit: Habit;
+
+    const dummy: Habit = {
+      id: habitData.id || '',
+      title: habitData.title,
+      category: habitData.category,
+      color: habitData.color,
+      icon: habitData.icon,
+      targetType: habitData.targetType,
+      targetValue: habitData.targetValue,
+      timeOfDay: habitData.timeOfDay,
+      frequencyDays: habitData.frequencyDays,
+      createdAt: '',
+      order: 0,
+    };
+    const visuals = resolveHabitVisuals(dummy, categories);
+    const enrichedData = {
+      ...habitData,
+      icon: habitData.icon && habitData.icon !== 'Target' ? habitData.icon : visuals.icon,
+      color: habitData.color && habitData.color !== 'emerald' ? habitData.color : visuals.color,
+    };
+
     if (habitData.id) {
-      savedHabit = { ...habits.find((h) => h.id === habitData.id)!, ...habitData };
+      savedHabit = { ...habits.find((h) => h.id === habitData.id)!, ...enrichedData };
       nextHabits = habits.map((h) => (h.id === habitData.id ? savedHabit : h));
     } else {
       savedHabit = {
-        ...habitData,
+        ...enrichedData,
         id: `task_${Date.now()}`,
         createdAt: new Date().toISOString(),
         order: habits.length,
@@ -443,13 +493,17 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    try {
+      localStorage.removeItem('horizon_guest_mode');
+    } catch {}
     await logoutUser();
+    setGuestMode(false);
     setIsSettingsOpen(false);
   };
 
   // If user is not authenticated and hasn't selected guest demo mode, show dedicated login gate!
   if (authInitialized && !currentUser && !guestMode) {
-    return <LoginView onEnterGuestMode={() => setGuestMode(true)} />;
+    return <LoginView onEnterGuestMode={handleEnterGuestMode} />;
   }
 
   // Theme styling background
@@ -536,6 +590,7 @@ export default function App() {
             entries={entries}
             focusSessions={focusSessions}
             reflections={reflections}
+            categories={categories}
             selectedDateKey={selectedDateKey}
             onSelectDateKey={setSelectedDateKey}
             onToggleComplete={handleToggleComplete}
@@ -632,6 +687,7 @@ export default function App() {
             goals={goals}
             habits={habits}
             entries={entries}
+            categories={categories}
             selectedDateKey={selectedDateKey}
             onOpenNewGoal={() => {
               setEditingGoal(null);
@@ -643,12 +699,14 @@ export default function App() {
             }}
             onOpenNewHabitForGoal={(goalId) => {
               const targetGoal = goals.find((g) => g.id === goalId);
+              const targetCatId = targetGoal?.category || categories[0]?.id || 'productivity';
+              const targetCat = categories.find((c) => c.id === targetCatId) || categories[0];
               setEditingHabit({
                 id: '',
                 title: '',
-                category: targetGoal?.category || categories[0]?.id || 'productivity',
-                color: 'emerald',
-                icon: 'Target',
+                category: targetCatId,
+                color: targetCat?.color || 'emerald',
+                icon: targetCat?.icon || 'Target',
                 targetType: 'boolean',
                 targetValue: 1,
                 timeOfDay: 'anytime',

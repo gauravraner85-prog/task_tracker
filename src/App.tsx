@@ -434,6 +434,36 @@ export default function App() {
     sound.playCheck();
   };
 
+  const handleSaveHabitNote = (habitId: string, noteText: string, dateKey?: string) => {
+    const targetHabit = habits.find((h) => h.id === habitId);
+    if (!targetHabit) return;
+
+    const trimmed = noteText.trim();
+    const updatedHabit: Habit = {
+      ...targetHabit,
+      notes: trimmed || undefined,
+    };
+    const nextHabits = habits.map((h) => (h.id === habitId ? updatedHabit : h));
+    setHabits(nextHabits);
+    saveHabits(nextHabits);
+    if (currentUser) saveHabitToFirestore(currentUser.uid, updatedHabit);
+
+    const targetDate = dateKey || selectedDateKey;
+    const entryId = `${habitId}_${targetDate}`;
+    const existingEntry = entries[entryId];
+    if (existingEntry) {
+      const updatedEntry: HabitEntry = {
+        ...existingEntry,
+        notes: trimmed || undefined,
+      };
+      const nextEntries = { ...entries, [entryId]: updatedEntry };
+      setEntries(nextEntries);
+      saveEntries(nextEntries);
+      if (currentUser) saveEntryToFirestore(currentUser.uid, updatedEntry);
+    }
+    sound.playCheck();
+  };
+
   const handleSaveCategory = (newCat: CustomCategory) => {
     const nextCategories = [...categories, newCat];
     setCategories(nextCategories);
@@ -616,6 +646,7 @@ export default function App() {
               setIsHabitModalOpen(true);
             }}
             onDeleteHabit={handleDeleteHabit}
+            onSaveHabitNote={handleSaveHabitNote}
             onSaveReflection={handleSaveReflection}
             onOpenNewHabit={() => {
               setEditingHabit(null);
@@ -733,6 +764,7 @@ export default function App() {
             }}
             onDeleteHabit={handleDeleteHabit}
             onToggleComplete={handleToggleComplete}
+            onSaveHabitNote={handleSaveHabitNote}
             onSaveGoalNotes={(goalId, noteText) => {
               const updatedGoals = goals.map((g) => {
                 if (g.id !== goalId) return g;

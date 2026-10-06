@@ -38,6 +38,7 @@ interface TodayViewProps {
   onSaveFocusSession: (session: Omit<FocusSession, 'id' | 'completedAt'>) => void;
   onEditHabit: (habit: Habit) => void;
   onDeleteHabit: (habitId: string) => void;
+  onSaveHabitNote?: (habitId: string, noteText: string, dateKey?: string) => void;
   onSaveReflection: (dateKey: string, reflection: Partial<DailyReflection>) => void;
   onOpenNewHabit: () => void;
   onOpenNewGoal: () => void;
@@ -65,6 +66,7 @@ export function TodayView({
   onOpenTimer,
   onEditHabit,
   onDeleteHabit,
+  onSaveHabitNote,
   onSaveReflection,
   onOpenNewHabit,
   onGoToGoalsTab,
@@ -249,6 +251,7 @@ export function TodayView({
                     onOpenTimer={() => onOpenTimer(habit)}
                     onEditHabit={onEditHabit}
                     onDeleteHabit={onDeleteHabit}
+                    onSaveNote={(note) => onSaveHabitNote?.(habit.id, note, selectedDateKey)}
                   />
                 );
               })

@@ -20,6 +20,7 @@ import {
   Check,
   Calendar,
   Quote,
+  FileText,
 } from 'lucide-react';
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string }> = {
@@ -47,6 +48,7 @@ interface GoalsViewProps {
   onDeleteHabit: (habitId: string) => void;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
   onSaveGoalNotes?: (goalId: string, noteText: string) => void;
+  onSaveHabitNote?: (habitId: string, noteText: string, dateKey?: string) => void;
 }
 
 export function GoalsView({
@@ -62,11 +64,15 @@ export function GoalsView({
   onEditHabit,
   onDeleteHabit,
   onToggleComplete,
+  onSaveGoalNotes,
+  onSaveHabitNote,
 }: GoalsViewProps) {
   const activeGoals = goals.filter((g) => g.status === 'active');
   const [selectedGoalId, setSelectedGoalId] = useState<string>(
     activeGoals[0]?.id || goals[0]?.id || ''
   );
+  const [expandedNoteHabitId, setExpandedNoteHabitId] = useState<string | null>(null);
+  const [draftNoteText, setDraftNoteText] = useState<string>('');
 
   // Target currently selected
   const currentGoal = goals.find((g) => g.id === selectedGoalId) || activeGoals[0] || goals[0];
@@ -363,104 +369,223 @@ export function GoalsView({
                   const isDone = entry && entry.status === 'completed';
                   const visuals = resolveHabitVisuals(habit, categories);
                   const colorScheme = COLOR_CLASSES[visuals.color] || COLOR_CLASSES.emerald;
+                  const currentNote = entry?.notes || habit.notes || '';
+                  const isNoteExpanded = expandedNoteHabitId === habit.id;
 
                   return (
                     <div
                       key={habit.id}
-                      className={`p-3 md:px-4 md:py-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 text-xs ${
+                      className={`p-3 md:px-4 md:py-3.5 rounded-xl border transition-all text-xs ${
                         isDone
                           ? 'bg-neutral-900/40 border-neutral-800/60'
                           : 'bg-neutral-900/80 border-neutral-800 hover:border-neutral-700 shadow-sm'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Live Checkbox matching home page */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isDone) {
-                              sound.playUncheck();
-                              onToggleComplete(habit, 0, inspectedDateKey);
-                            } else {
-                              sound.playCheck();
-                              onToggleComplete(habit, habit.targetValue, inspectedDateKey);
-                            }
-                          }}
-                          aria-label={isDone ? 'Mark incomplete' : 'Mark done'}
-                          className={`w-6 h-6 md:w-7 md:h-7 rounded-lg shrink-0 flex items-center justify-center border transition-all active:scale-90 ${
-                            isDone
-                              ? 'bg-emerald-500 border-emerald-400 text-neutral-950 shadow-sm shadow-emerald-500/20'
-                              : 'border-neutral-700 bg-neutral-850 hover:border-emerald-500/60 text-transparent hover:text-neutral-500'
-                          }`}
-                        >
-                          {isDone && <Check className="w-4 h-4 stroke-[3]" />}
-                        </button>
-
-                        {/* Logo / Category Icon like home page */}
-                        <div
-                          className={`w-7 h-7 md:w-8 md:h-8 rounded-lg shrink-0 flex items-center justify-center border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
-                        >
-                          <HabitIcon name={visuals.icon} className="w-4 h-4" />
-                        </div>
-
-                        {/* Title and metadata */}
-                        <div className="min-w-0 flex-1">
-                          <span
-                            className={`text-sm font-semibold tracking-tight block truncate ${
-                              isDone ? 'text-neutral-400 line-through decoration-neutral-600' : 'text-neutral-100'
+                      {/* Main Task Header Row */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {/* Live Checkbox matching home page */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isDone) {
+                                sound.playUncheck();
+                                onToggleComplete(habit, 0, inspectedDateKey);
+                              } else {
+                                sound.playCheck();
+                                onToggleComplete(habit, habit.targetValue, inspectedDateKey);
+                              }
+                            }}
+                            aria-label={isDone ? 'Mark incomplete' : 'Mark done'}
+                            className={`w-6 h-6 md:w-7 md:h-7 rounded-lg shrink-0 flex items-center justify-center border transition-all active:scale-90 ${
+                              isDone
+                                ? 'bg-emerald-500 border-emerald-400 text-neutral-950 shadow-sm shadow-emerald-500/20'
+                                : 'border-neutral-700 bg-neutral-850 hover:border-emerald-500/60 text-transparent hover:text-neutral-500'
                             }`}
                           >
-                            {habit.title}
-                          </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border font-medium ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}>
-                              {visuals.categoryLabel}
-                            </span>
-                            <span className="text-[11px] text-neutral-400 capitalize">
-                              · {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
-                            </span>
+                            {isDone && <Check className="w-4 h-4 stroke-[3]" />}
+                          </button>
+
+                          {/* Logo / Category Icon like home page */}
+                          <div
+                            className={`w-7 h-7 md:w-8 md:h-8 rounded-lg shrink-0 flex items-center justify-center border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
+                          >
+                            <HabitIcon name={visuals.icon} className="w-4 h-4" />
                           </div>
+
+                          {/* Title and metadata */}
+                          <div className="min-w-0 flex-1">
+                            <span
+                              className={`text-sm font-semibold tracking-tight block truncate ${
+                                isDone ? 'text-neutral-400 line-through decoration-neutral-600' : 'text-neutral-100'
+                              }`}
+                            >
+                              {habit.title}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border font-medium ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}>
+                                {visuals.categoryLabel}
+                              </span>
+                              <span className="text-[11px] text-neutral-400 capitalize">
+                                · {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions & Status Badge */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`text-[10px] font-mono px-2.5 py-1 rounded-full border font-medium ${
+                              isDone
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                            }`}
+                          >
+                            {isDone ? '✓ Completed' : 'Pending'}
+                          </span>
+
+                          {/* Note Expand/Collapse Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isNoteExpanded) {
+                                setExpandedNoteHabitId(null);
+                              } else {
+                                setExpandedNoteHabitId(habit.id);
+                                setDraftNoteText(currentNote);
+                              }
+                            }}
+                            title={currentNote ? 'View/Edit Note' : 'Add Note'}
+                            className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${
+                              currentNote
+                                ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25'
+                                : 'border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white text-neutral-400'
+                            }`}
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditHabit(habit);
+                            }}
+                            title={`Edit "${habit.title}"`}
+                            className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white text-neutral-400 flex items-center justify-center transition-colors"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Delete task "${habit.title}"?`)) {
+                                onDeleteHabit(habit.id);
+                              }
+                            }}
+                            title={`Delete "${habit.title}"`}
+                            className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-rose-500/15 hover:border-rose-500/30 hover:text-rose-400 text-neutral-400 flex items-center justify-center transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
 
-                      {/* Actions & Status Badge */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span
-                          className={`text-[10px] font-mono px-2.5 py-1 rounded-full border font-medium ${
-                            isDone
-                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                              : 'bg-neutral-900 text-neutral-400 border-neutral-800'
-                          }`}
-                        >
-                          {isDone ? '✓ Completed' : 'Pending'}
-                        </span>
-
+                      {/* Note Preview if note exists and editor is collapsed */}
+                      {currentNote && !isNoteExpanded && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onEditHabit(habit);
+                            setExpandedNoteHabitId(habit.id);
+                            setDraftNoteText(currentNote);
                           }}
-                          title={`Edit "${habit.title}"`}
-                          className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white text-neutral-400 flex items-center justify-center transition-colors"
+                          className="mt-2.5 text-left w-full px-2.5 py-1.5 rounded-lg bg-neutral-950/70 border border-neutral-800 hover:border-amber-500/40 text-neutral-300 text-[11px] flex items-start gap-1.5 transition-all group"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <FileText className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" />
+                          <span className="line-clamp-2 italic text-neutral-300 group-hover:text-amber-200 flex-1">
+                            {currentNote}
+                          </span>
+                          <span className="text-[10px] text-neutral-500 ml-auto shrink-0 group-hover:text-amber-400 font-mono">
+                            Edit Note
+                          </span>
                         </button>
+                      )}
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`Delete task "${habit.title}"?`)) {
-                              onDeleteHabit(habit.id);
-                            }
-                          }}
-                          title={`Delete "${habit.title}"`}
-                          className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-rose-500/15 hover:border-rose-500/30 hover:text-rose-400 text-neutral-400 flex items-center justify-center transition-colors"
+                      {/* Expandable Inline Note Editor */}
+                      {isNoteExpanded && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-3 pt-3 border-t border-neutral-800/80 space-y-2 animate-in fade-in-50 duration-150"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold text-neutral-200 flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Note for {habit.title}</span>
+                            </span>
+                            <span className="text-[10px] text-neutral-500 font-mono">
+                              Day {inspectedDay}
+                            </span>
+                          </div>
+
+                          <textarea
+                            value={draftNoteText}
+                            onChange={(e) => setDraftNoteText(e.target.value)}
+                            placeholder="Add notes, key takeaways, links, or solutions for this task..."
+                            rows={3}
+                            className="w-full bg-neutral-950 border border-neutral-700/80 focus:border-amber-500/80 focus:ring-1 focus:ring-amber-500/50 rounded-lg p-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none resize-y"
+                            autoFocus
+                          />
+
+                          <div className="flex items-center justify-between gap-2 pt-0.5">
+                            {currentNote ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onSaveHabitNote?.(habit.id, '', inspectedDateKey);
+                                  setExpandedNoteHabitId(null);
+                                  setDraftNoteText('');
+                                }}
+                                className="text-[11px] text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                <span>Remove note</span>
+                              </button>
+                            ) : (
+                              <span />
+                            )}
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedNoteHabitId(null);
+                                  setDraftNoteText('');
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onSaveHabitNote?.(habit.id, draftNoteText, inspectedDateKey);
+                                  setExpandedNoteHabitId(null);
+                                  setDraftNoteText('');
+                                }}
+                                className="px-3 py-1 rounded-lg text-xs font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 transition-colors shadow-sm flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                                <span>Save Note</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })

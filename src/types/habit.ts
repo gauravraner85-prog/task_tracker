@@ -16,6 +16,7 @@ export interface Habit {
   id: string;
   title: string;
   description?: string;
+  notes?: string;
   category: HabitCategory;
   color: string; // e.g. 'emerald', 'sky', 'indigo', 'amber', 'rose', 'teal'
   icon: string; // Lucide icon identifier

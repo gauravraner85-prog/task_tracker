@@ -41,6 +41,9 @@ export function HabitFormModal({
   );
   const [isOneTime, setIsOneTime] = useState(initialHabit?.isOneTime || false);
   const [specificDate, setSpecificDate] = useState(initialHabit?.specificDate || getTodayKey());
+  const [startDate, setStartDate] = useState<string>(
+    initialHabit?.startDate || initialHabit?.specificDate || getTodayKey()
+  );
   const [goalId, setGoalId] = useState<string>(initialHabit?.goalId || '');
   const [cue, setCue] = useState(initialHabit?.cue || '');
   const [showAdvancedStyle, setShowAdvancedStyle] = useState(false);
@@ -91,6 +94,7 @@ export function HabitFormModal({
       frequencyDays: isOneTime ? [0, 1, 2, 3, 4, 5, 6] : frequencyDays,
       isOneTime,
       specificDate: isOneTime ? specificDate : undefined,
+      startDate: !isOneTime ? startDate : undefined,
       goalId: goalId || undefined,
       cue: cue.trim() || undefined,
     });
@@ -339,6 +343,25 @@ export function HabitFormModal({
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Effective Start Date for recurring routine */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-neutral-300 font-medium flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-emerald-400" />
+                      <span>Starts From Date:</span>
+                    </span>
+                    <span className="text-[10px] text-neutral-500 font-mono">
+                      Applies from this day onwards (not past days)
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
                 </div>
               </div>
             ) : (

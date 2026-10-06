@@ -379,9 +379,15 @@ export default function App() {
       savedHabit = { ...habits.find((h) => h.id === habitData.id)!, ...enrichedData };
       nextHabits = habits.map((h) => (h.id === habitData.id ? savedHabit : h));
     } else {
+      const effectiveStart =
+        enrichedData.startDate ||
+        enrichedData.specificDate ||
+        selectedDateKey ||
+        getTodayKey();
       savedHabit = {
         ...enrichedData,
         id: `task_${Date.now()}`,
+        startDate: effectiveStart,
         createdAt: new Date().toISOString(),
         order: habits.length,
       };
@@ -738,10 +744,11 @@ export default function App() {
               setIsGoalModalOpen(true);
             }}
             onDeleteGoal={handleDeleteGoal}
-            onOpenNewHabitForGoal={(goalId) => {
+            onOpenNewHabitForGoal={(goalId, startingDateKey) => {
               const targetGoal = goals.find((g) => g.id === goalId);
               const targetCatId = targetGoal?.category || categories[0]?.id || 'productivity';
               const targetCat = categories.find((c) => c.id === targetCatId) || categories[0];
+              const effectiveDate = startingDateKey || selectedDateKey || getTodayKey();
               setEditingHabit({
                 id: '',
                 title: '',
@@ -752,6 +759,8 @@ export default function App() {
                 targetValue: 1,
                 timeOfDay: 'anytime',
                 frequencyDays: [0, 1, 2, 3, 4, 5, 6],
+                startDate: effectiveDate,
+                specificDate: effectiveDate,
                 goalId,
                 order: habits.length,
                 createdAt: new Date().toISOString(),

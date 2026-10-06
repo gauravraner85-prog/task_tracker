@@ -29,6 +29,8 @@ export interface Habit {
   cue?: string; // "Right after morning coffee"
   isOneTime?: boolean; // If true, only occurs on specificDate
   specificDate?: string; // YYYY-MM-DD for one-off tasks
+  startDate?: string; // YYYY-MM-DD: effective start date (tasks added in-between target period only appear from this date onwards)
+  endDate?: string; // YYYY-MM-DD: optional end date
   goalId?: string; // Linked parent target goal
   createdAt: string;
   archived?: boolean;

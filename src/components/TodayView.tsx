@@ -5,6 +5,7 @@ import { ActivityHeatmap } from './ActivityHeatmap';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
 import { DailyEnergyCheckin } from './DailyEnergyCheckin';
 import { calculateHabitStats } from '../utils/analytics';
+import { isHabitScheduledOnDate } from '../utils/habitSchedule';
 import { parseDateKey, getRelativeDateLabel, formatDateKey, getTodayKey } from '../utils/date';
 import {
   ChevronLeft,
@@ -83,12 +84,10 @@ export function TodayView({
   const selectedDate = parseDateKey(selectedDateKey);
   const dayOfWeek = selectedDate.getDay();
 
-  // Habits active for the selected date
-  const scheduledHabits = habits.filter((h) => {
-    if (h.archived) return false;
-    if (h.isOneTime) return h.specificDate === selectedDateKey;
-    return h.frequencyDays.includes(dayOfWeek);
-  });
+  // Habits active for the selected date (tasks added in-between only apply from their start day onwards)
+  const scheduledHabits = habits.filter((h) =>
+    isHabitScheduledOnDate(h, selectedDateKey, dayOfWeek)
+  );
 
   const totalCount = scheduledHabits.length;
   const completedCount = scheduledHabits.filter((h) => {

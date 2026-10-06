@@ -6,6 +6,7 @@ import { sound } from '../utils/audio';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
 import { HabitIcon } from './HabitIcon';
 import { resolveHabitVisuals } from '../utils/habitVisuals';
+import { isHabitScheduledOnDate } from '../utils/habitSchedule';
 import { CustomCategory } from '../types/habit';
 import {
   Target,
@@ -43,7 +44,7 @@ interface GoalsViewProps {
   onOpenNewGoal: () => void;
   onEditGoal: (goal: Goal) => void;
   onDeleteGoal: (goalId: string) => void;
-  onOpenNewHabitForGoal: (goalId: string) => void;
+  onOpenNewHabitForGoal: (goalId: string, startingDateKey?: string) => void;
   onEditHabit: (habit: Habit) => void;
   onDeleteHabit: (habitId: string) => void;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
@@ -150,11 +151,10 @@ export function GoalsView({
   const inspectedDateKey = formatDateKey(inspectedDateObj);
   const inspectedDayOfWeek = inspectedDateObj.getDay();
 
-  // Tasks for inspected day
-  const inspectedDayHabits = linkedHabits.filter((h) => {
-    if (h.isOneTime) return h.specificDate === inspectedDateKey;
-    return h.frequencyDays.includes(inspectedDayOfWeek);
-  });
+  // Tasks for inspected day: tasks added in-between target period only appear from that day to the end, never on previous days!
+  const inspectedDayHabits = linkedHabits.filter((h) =>
+    isHabitScheduledOnDate(h, inspectedDateKey, inspectedDayOfWeek)
+  );
 
   const inspectedCompletedCount = inspectedDayHabits.filter((h) => {
     const e = entries[`${h.id}_${inspectedDateKey}`];
@@ -352,7 +352,7 @@ export function GoalsView({
                 </span>
 
                 <button
-                  onClick={() => onOpenNewHabitForGoal(currentGoal.id)}
+                  onClick={() => onOpenNewHabitForGoal(currentGoal.id, inspectedDateKey)}
                   className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -422,10 +422,15 @@ export function GoalsView({
                             >
                               {habit.title}
                             </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                               <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border font-medium ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}>
                                 {visuals.categoryLabel}
                               </span>
+                              {habit.startDate && habit.startDate > currentGoal.startDate && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-amber-300 border border-neutral-700 font-medium">
+                                  Starts {habit.startDate}
+                                </span>
+                              )}
                               <span className="text-[11px] text-neutral-400 capitalize">
                                 · {habit.timeOfDay} · Target: {habit.targetValue} {habit.unit || 'units'}
                               </span>
@@ -595,7 +600,7 @@ export function GoalsView({
                     No routine tasks scheduled for Day {inspectedDay}.
                   </p>
                   <button
-                    onClick={() => onOpenNewHabitForGoal(currentGoal.id)}
+                    onClick={() => onOpenNewHabitForGoal(currentGoal.id, inspectedDateKey)}
                     className="text-xs text-emerald-400 hover:underline font-semibold"
                   >
                     + Link a daily task to {currentGoal.title}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Habit, HabitEntry, Goal } from '../types/habit';
 import { getWeekDays, parseDateKey, formatDateKey, getTodayKey } from '../utils/date';
+import { isHabitScheduledOnDate } from '../utils/habitSchedule';
 import { HabitIcon } from './HabitIcon';
 import { sound } from '../utils/audio';
 import { ChevronLeft, ChevronRight, Check, X, PauseCircle, Calendar, Sparkles, Target } from 'lucide-react';
@@ -56,7 +57,7 @@ export function WeekView({
     let completed = 0;
 
     displayedHabits.forEach((habit) => {
-      if (habit.frequencyDays.includes(dayOfWeek)) {
+      if (isHabitScheduledOnDate(habit, day.key, dayOfWeek)) {
         scheduled++;
         const entry = entries[`${habit.id}_${day.key}`];
         if (entry && entry.status === 'completed') {
@@ -233,7 +234,7 @@ export function WeekView({
                       {/* Day cells */}
                       {weekDays.map((day) => {
                         const dayOfWeek = day.date.getDay();
-                        const isScheduled = habit.frequencyDays.includes(dayOfWeek);
+                        const isScheduled = isHabitScheduledOnDate(habit, day.key, dayOfWeek);
                         const entry = entries[`${habit.id}_${day.key}`];
 
                         if (isScheduled) {

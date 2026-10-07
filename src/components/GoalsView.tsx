@@ -4,6 +4,7 @@ import { calculateGoalAnalytics } from '../utils/goalAnalytics';
 import { parseDateKey, getTodayKey, getPastNDays, formatDateKey } from '../utils/date';
 import { sound } from '../utils/audio';
 import { ProgressRocketWidget } from './ProgressRocketWidget';
+import { TargetDayProgressGraph } from './TargetDayProgressGraph';
 import { HabitIcon } from './HabitIcon';
 import { resolveHabitVisuals } from '../utils/habitVisuals';
 import { isHabitScheduledOnDate } from '../utils/habitSchedule';
@@ -45,7 +46,7 @@ interface GoalsViewProps {
   onEditGoal: (goal: Goal) => void;
   onDeleteGoal: (goalId: string) => void;
   onOpenNewHabitForGoal: (goalId: string, startingDateKey?: string) => void;
-  onEditHabit: (habit: Habit) => void;
+  onEditHabit: (habit: Habit, effectiveDateKey?: string) => void;
   onDeleteHabit: (habitId: string) => void;
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
   onSaveGoalNotes?: (goalId: string, noteText: string) => void;
@@ -161,50 +162,6 @@ export function GoalsView({
     return e && e.status === 'completed';
   }).length;
 
-  // Motivation quotes with thinker pictures, changes automatically every 5 hours
-  const TARGET_MOTIVATIONS = [
-    {
-      quote: "The impediment to action advances action. What stands in the way becomes the way.",
-      author: "Marcus Aurelius",
-      title: "Roman Emperor & Stoic Philosopher",
-      avatar: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=120&auto=format&fit=crop&q=80",
-    },
-    {
-      quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
-      author: "Aristotle",
-      title: "Greek Polymath & Philosopher",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
-    },
-    {
-      quote: "Knowing is not enough, we must apply. Willing is not enough, we must do.",
-      author: "Bruce Lee",
-      title: "Martial Artist & Philosopher",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
-    },
-    {
-      quote: "You do not rise to the level of your goals. You fall to the level of your systems.",
-      author: "James Clear",
-      title: "Author of Atomic Habits",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
-    },
-    {
-      quote: "It is not that we have a short time to live, but that we waste a lot of it.",
-      author: "Seneca",
-      title: "Stoic Philosopher & Statesman",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80",
-    },
-    {
-      quote: "Small daily improvements over time lead to stunning results.",
-      author: "Robin Sharma",
-      title: "Performance & Leadership Mentor",
-      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80",
-    },
-  ];
-
-  // Rotate quote every 5 hours
-  const fiveHourBlock = Math.floor(Date.now() / (5 * 60 * 60 * 1000));
-  const motivation = TARGET_MOTIVATIONS[fiveHourBlock % TARGET_MOTIVATIONS.length];
-
   return (
     <div className="space-y-4">
       {/* Top Target Switcher Bar */}
@@ -275,46 +232,112 @@ export function GoalsView({
         </div>
       </div>
 
-      {/* 2-COLUMN LAYOUT:
-          - Left/Middle (7 cols):
-              1. Compact Motivation card at top with thinker portrait picture (no "5h daily focus" badge)
-              2. Day Details & Tasks in Middle Screen
-          - Right Sidebar (5 cols):
-              1. Top: Keep Pushing Progress Card matching user's reference image
-              2. Below: 7-Days-per-Row Vertical Chain (no "D1 D2" headers, just clean numbers 1 2 3...)
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* ================= MIDDLE COLUMN ================= */}
-        <div className="lg:col-span-7 space-y-4">
-          {/* 1. MOTIVATION CARD WITH PICTURE & AUTHOR (BIGGER TEXT, CLEAR PORTRAIT) */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-neutral-800 bg-neutral-900/80 flex items-center gap-4 shadow-sm relative overflow-hidden">
-            {/* Thinker Portrait Picture */}
-            <img
-              src={motivation.avatar}
-              alt={motivation.author}
-              className="w-13 h-13 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-emerald-500/50 shrink-0 shadow-md ring-2 ring-emerald-500/20"
-              onError={(e) => {
-                // Fallback to initial avatar
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+      {/* 1. HERO TARGET SHOWCASE BANNER (BIGGER, VISIBLE, 2 HEADERS: MAIN HEADING + SUBHEADING) */}
+      <div className="p-5 sm:p-6 rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900/90 to-neutral-950 shadow-md relative overflow-hidden">
+        {/* Subtle ambient accent glow */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
 
-            <div className="min-w-0 flex-1">
-              <p className="font-serif italic text-sm sm:text-base md:text-lg text-neutral-100 leading-snug">
-                &ldquo;{motivation.quote}&rdquo;
-              </p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs font-bold text-emerald-400 font-mono">
-                  {motivation.author}
-                </span>
-                <span className="text-[11px] text-neutral-400 font-mono hidden sm:inline">
-                  · {motivation.title}
-                </span>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-2.5 max-w-2xl">
+            {/* Target Status & Category Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono font-bold">
+                <Target className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{totalDays} Days Target</span>
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-200 border border-neutral-700 font-semibold">
+                Day {currentDayIndex} of {totalDays}
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-neutral-850 text-neutral-400 border border-neutral-750">
+                {currentGoal.startDate} → {currentGoal.targetDate}
+              </span>
+            </div>
+
+            {/* 2 HEADERS: Main Heading (Bigger) & Subheading (Shorter below it) */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                {currentGoal.title}
+              </h1>
+              {currentGoal.subheading ? (
+                <p className="text-sm sm:text-base font-medium text-emerald-400/90 mt-1 leading-snug">
+                  {currentGoal.subheading}
+                </p>
+              ) : currentGoal.description ? (
+                <p className="text-sm text-neutral-300 mt-1 leading-snug">
+                  {currentGoal.description}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Target Metric, Streak, & Pace Summary */}
+            <div className="flex items-center gap-3 pt-0.5 text-xs text-neutral-400 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>Streak: <strong className="text-amber-300 font-mono font-bold">{targetStreak} Days</strong></span>
+              </div>
+              <span>·</span>
+              <div>
+                <span>Goal Volume: <strong className="text-neutral-200 font-mono font-bold">{currentGoal.targetMetricCount} {currentGoal.metricUnit}</strong></span>
+              </div>
+              <span>·</span>
+              <div>
+                <span>Completion: <strong className="text-emerald-400 font-mono font-bold">{analytics.percentComplete}%</strong></span>
               </div>
             </div>
           </div>
 
-          {/* 2. DAY DETAILS & TASKS IN MIDDLE SCREEN */}
+          {/* Quick Target Progress Ring / Actions */}
+          <div className="flex md:flex-col items-center md:items-end justify-between gap-3 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-neutral-800">
+            <div className="text-left md:text-right">
+              <span className="text-[10px] font-mono uppercase text-neutral-500 block">Total Target Progress</span>
+              <div className="text-2xl sm:text-3xl font-mono font-black text-emerald-400">
+                {analytics.currentProgress} <span className="text-xs text-neutral-400 font-normal">/ {currentGoal.targetMetricCount} {currentGoal.metricUnit}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onEditGoal(currentGoal)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit Target</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenNewHabitForGoal(currentGoal.id, inspectedDateKey)}
+                className="px-3.5 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>+ Add Task to Day {inspectedDay}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. DAY-WISE TARGET PROGRESS & IMPROVEMENT GRAPH (30-DAY VELOCITY CURVE & DAY-BY-DAY EXECUTION) */}
+      <TargetDayProgressGraph
+        goal={currentGoal}
+        habits={habits}
+        entries={entries}
+        currentDayIndex={currentDayIndex}
+        totalDays={totalDays}
+        inspectedDay={inspectedDay}
+        onSelectDay={(dayNum) => setInspectedDay(dayNum)}
+      />
+
+      {/* 2-COLUMN LAYOUT:
+          - Left/Middle (7 cols): Day Details & Tasks in Middle Screen
+          - Right Sidebar (5 cols):
+              1. Keep Pushing Progress Card matching reference image
+              2. Timeline Chain ({totalDays} Days)
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* ================= MIDDLE COLUMN ================= */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* DAY DETAILS & TASKS IN MIDDLE SCREEN */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 space-y-4 shadow-sm">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
               <div>
@@ -476,7 +499,7 @@ export function GoalsView({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onEditHabit(habit);
+                              onEditHabit(habit, inspectedDateKey);
                             }}
                             title={`Edit "${habit.title}"`}
                             className="w-7 h-7 rounded-lg border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white text-neutral-400 flex items-center justify-center transition-colors"
@@ -613,9 +636,10 @@ export function GoalsView({
 
         {/* ================= RIGHT SIDEBAR ================= */}
         <div className="lg:col-span-5 space-y-4">
-          {/* 1. KEEP PUSHING PROGRESS WIDGET MATCHING REFERENCE IMAGE */}
+          {/* 1. KEEP PUSHING PROGRESS WIDGET MATCHING REFERENCE IMAGE (BIGGER TITLE + SUBHEADING) */}
           <ProgressRocketWidget
             title={currentGoal.title}
+            subheading={currentGoal.subheading}
             subtitle={currentGoal.description || 'Building mastery one problem at a time — keep the momentum going!'}
             completed={analytics.currentProgress}
             total={currentGoal.targetMetricCount}

@@ -13,17 +13,18 @@ interface GoalFormModalProps {
 const PRESET_DURATIONS = [
   { label: '7 Days', days: 7 },
   { label: '14 Days', days: 14 },
-  { label: '1 Month', days: 30 },
-  { label: '2 Months', days: 60 },
-  { label: '3 Months', days: 90 },
-  { label: '6 Months', days: 180 },
-  { label: '1 Year', days: 365 },
+  { label: '30 Days', days: 30 },
+  { label: '60 Days', days: 60 },
+  { label: '90 Days', days: 90 },
+  { label: '180 Days', days: 180 },
+  { label: '365 Days', days: 365 },
 ];
 
 export function GoalFormModal({ initialGoal, habits, onClose, onSave }: GoalFormModalProps) {
   const todayKey = getTodayKey();
 
   const [title, setTitle] = useState(initialGoal?.title || '');
+  const [subheading, setSubheading] = useState(initialGoal?.subheading || '');
   const [description, setDescription] = useState(initialGoal?.description || '');
   const [category, setCategory] = useState<HabitCategory>(initialGoal?.category || 'productivity');
   const [color, setColor] = useState(initialGoal?.color || 'emerald');
@@ -78,6 +79,7 @@ export function GoalFormModal({ initialGoal, habits, onClose, onSave }: GoalForm
     onSave({
       id: initialGoal?.id,
       title: title.trim(),
+      subheading: subheading.trim() || undefined,
       description: description.trim() || undefined,
       category,
       color,
@@ -117,10 +119,10 @@ export function GoalFormModal({ initialGoal, habits, onClose, onSave }: GoalForm
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
-          {/* Title */}
+          {/* Main Heading / Target Title */}
           <div>
             <label className="block text-xs font-semibold text-neutral-300 mb-1">
-              Target Title *
+              Main Target Heading *
             </label>
             <input
               type="text"
@@ -130,7 +132,24 @@ export function GoalFormModal({ initialGoal, habits, onClose, onSave }: GoalForm
                 setTitle(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="e.g. 100 Deep Work Sprints, Fitness Transformation, Learn React"
+              placeholder="e.g. Job Switch (6+ LPA), Full-Stack Mastery, Marathon Prep"
+              className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 font-semibold"
+            />
+          </div>
+
+          {/* Subheading / Tagline */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-neutral-300">
+                Subheading (Shorter tagline)
+              </label>
+              <span className="text-[10px] text-neutral-500">Optional</span>
+            </div>
+            <input
+              type="text"
+              value={subheading}
+              onChange={(e) => setSubheading(e.target.value)}
+              placeholder="e.g. Building mastery one problem at a time — keep the momentum going!"
               className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
             />
           </div>

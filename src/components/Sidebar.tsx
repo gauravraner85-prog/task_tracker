@@ -61,19 +61,17 @@ export function Sidebar({
     setSoundEnabled(newState);
   };
 
-  const navItems = [
-    { id: 'today' as const, label: 'Tasks', icon: CheckCircle2 },
-    { id: 'goals' as const, label: 'Targets', icon: Target },
-    {
-      id: 'timer' as const,
-      label: 'Focus Timer',
-      icon: Clock,
-      badge: isTimerRunning ? timerFormatted : undefined,
-    },
-    { id: 'mindset' as const, label: 'Daily Mindset & Focus', icon: Brain },
-    { id: 'week' as const, label: 'Weekly Matrix', icon: Calendar },
-    { id: 'month' as const, label: 'Monthly Heatmap', icon: Calendar },
-    { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+  const navItems: {
+    id: 'today' | 'goals' | 'week' | 'month' | 'analytics';
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
+  }[] = [
+    { id: 'today', label: 'Tasks', icon: CheckCircle2 },
+    { id: 'goals', label: 'Targets', icon: Target },
+    { id: 'week', label: 'Weekly Matrix', icon: Calendar },
+    { id: 'month', label: 'Monthly Heatmap', icon: Calendar },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const themes: { id: AppTheme; label: string; color: string }[] = [

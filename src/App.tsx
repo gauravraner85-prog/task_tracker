@@ -34,7 +34,8 @@ import {
   deleteCategoryFromFirestore,
   saveAchievementToFirestore,
 } from './utils/firestoreSync';
-import { getTodayKey } from './utils/date';
+import { getTodayKey, getPreviousDayKey, parseDateKey, formatDateKey } from './utils/date';
+import { getHabitEffectiveStartDate } from './utils/habitSchedule';
 import { sound } from './utils/audio';
 import { fireConfetti } from './utils/confetti';
 import { resolveHabitVisuals } from './utils/habitVisuals';
@@ -137,6 +138,7 @@ export default function App() {
   // Modals state
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [editingHabitEffectiveDate, setEditingHabitEffectiveDate] = useState<string>(getTodayKey());
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -351,7 +353,13 @@ export default function App() {
     setMissedModalState(null);
   };
 
-  const handleSaveHabit = (habitData: Omit<Habit, 'id' | 'createdAt' | 'order'> & { id?: string }) => {
+  const handleSaveHabit = (
+    habitData: Omit<Habit, 'id' | 'createdAt' | 'order'> & {
+      id?: string;
+      editScope?: 'from_now' | 'all';
+      effectiveFromDate?: string;
+    }
+  ) => {
     let nextHabits: Habit[];
     let savedHabit: Habit;
 
@@ -376,12 +384,78 @@ export default function App() {
     };
 
     if (habitData.id) {
-      savedHabit = { ...habits.find((h) => h.id === habitData.id)!, ...enrichedData };
-      nextHabits = habits.map((h) => (h.id === habitData.id ? savedHabit : h));
+      const existingHabit = habits.find((h) => h.id === habitData.id);
+      if (!existingHabit) return;
+
+      const editScope = habitData.editScope || 'from_now';
+      const effectiveDate =
+        habitData.effectiveFromDate ||
+        editingHabitEffectiveDate ||
+        selectedDateKey ||
+        getTodayKey();
+
+      const existingStart = getHabitEffectiveStartDate(existingHabit);
+
+      // If user edits only from effectiveDate ahead and habit started before that date:
+      if (editScope === 'from_now' && existingStart && existingStart < effectiveDate) {
+        // 1. Cap existing habit on the day before effectiveDate so previous days remain intact with past logs
+        const prevDate = new Date(parseDateKey(effectiveDate));
+        prevDate.setDate(prevDate.getDate() - 1);
+        const dayBefore = formatDateKey(prevDate);
+
+        const cappedExisting: Habit = {
+          ...existingHabit,
+          endDate: dayBefore,
+        };
+
+        // 2. Create ahead version of task starting from effectiveDate forward
+        const aheadHabit: Habit = {
+          ...existingHabit,
+          ...enrichedData,
+          id: `task_${Date.now()}`,
+          startDate: effectiveDate,
+          endDate: undefined,
+          createdAt: new Date().toISOString(),
+          order: habits.length,
+        };
+
+        savedHabit = aheadHabit;
+        nextHabits = habits.map((h) => (h.id === existingHabit.id ? cappedExisting : h)).concat(aheadHabit);
+
+        // If part of a goal, ensure new habit ID is also in goal's linkedHabitIds
+        if (existingHabit.goalId) {
+          const targetGoal = goals.find((g) => g.id === existingHabit.goalId);
+          if (targetGoal && targetGoal.linkedHabitIds) {
+            const nextGoal = {
+              ...targetGoal,
+              linkedHabitIds: Array.from(new Set([...targetGoal.linkedHabitIds, aheadHabit.id])),
+            };
+            const updatedGoals = goals.map((g) => (g.id === nextGoal.id ? nextGoal : g));
+            setGoals(updatedGoals);
+            saveGoals(updatedGoals);
+            if (currentUser) saveGoalToFirestore(currentUser.uid, nextGoal);
+          }
+        }
+
+        if (currentUser) {
+          saveHabitToFirestore(currentUser.uid, cappedExisting);
+          saveHabitToFirestore(currentUser.uid, aheadHabit);
+        }
+      } else {
+        // Edit applies globally or habit began on/after effectiveDate
+        savedHabit = {
+          ...existingHabit,
+          ...enrichedData,
+          startDate: editScope === 'from_now' ? effectiveDate : (enrichedData.startDate || existingHabit.startDate),
+        };
+        nextHabits = habits.map((h) => (h.id === habitData.id ? savedHabit : h));
+        if (currentUser) saveHabitToFirestore(currentUser.uid, savedHabit);
+      }
     } else {
       const effectiveStart =
         enrichedData.startDate ||
         enrichedData.specificDate ||
+        editingHabitEffectiveDate ||
         selectedDateKey ||
         getTodayKey();
       savedHabit = {
@@ -393,11 +467,11 @@ export default function App() {
       };
       nextHabits = [...habits, savedHabit];
       sound.playCheck();
+      if (currentUser) saveHabitToFirestore(currentUser.uid, savedHabit);
     }
 
     setHabits(nextHabits);
     saveHabits(nextHabits);
-    if (currentUser) saveHabitToFirestore(currentUser.uid, savedHabit);
     setIsHabitModalOpen(false);
     setEditingHabit(null);
   };
@@ -649,6 +723,7 @@ export default function App() {
             onSaveFocusSession={handleSaveFocusSession}
             onEditHabit={(habit) => {
               setEditingHabit(habit);
+              setEditingHabitEffectiveDate(selectedDateKey);
               setIsHabitModalOpen(true);
             }}
             onDeleteHabit={handleDeleteHabit}
@@ -767,8 +842,9 @@ export default function App() {
               });
               setIsHabitModalOpen(true);
             }}
-            onEditHabit={(habit) => {
+            onEditHabit={(habit, effectiveDateKey) => {
               setEditingHabit(habit);
+              setEditingHabitEffectiveDate(effectiveDateKey || selectedDateKey || getTodayKey());
               setIsHabitModalOpen(true);
             }}
             onDeleteHabit={handleDeleteHabit}
@@ -869,12 +945,10 @@ export default function App() {
       </main>
 
       {/* Mobile Ergonomic Bottom Tab Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800 grid grid-cols-6 items-center h-16 px-1">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800 grid grid-cols-4 items-center h-16 px-1">
         {[
           { id: 'today', label: 'Tasks', icon: CheckCircle2 },
           { id: 'goals', label: 'Targets', icon: Target },
-          { id: 'timer', label: 'Timer', icon: Clock },
-          { id: 'mindset', label: 'Mindset', icon: Brain },
           { id: 'analytics', label: 'Stats', icon: BarChart3 },
           { id: 'profile', label: 'Profile', icon: UserIcon },
         ].map((tab) => {
@@ -924,9 +998,11 @@ export default function App() {
           initialHabit={editingHabit}
           goals={goals}
           categories={categories}
+          effectiveDateKey={editingHabitEffectiveDate}
           onClose={() => {
             setIsHabitModalOpen(false);
             setEditingHabit(null);
+            setEditingHabitEffectiveDate(getTodayKey());
           }}
           onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
           onSave={handleSaveHabit}

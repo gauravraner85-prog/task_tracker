@@ -8,9 +8,14 @@ interface HabitFormModalProps {
   initialHabit?: Habit | null;
   goals?: Goal[];
   categories: CustomCategory[];
+  effectiveDateKey?: string;
   onClose: () => void;
   onOpenCategoryManager: () => void;
-  onSave: (habitData: Omit<Habit, 'id' | 'createdAt' | 'order'> & { id?: string }) => void;
+  onSave: (habitData: Omit<Habit, 'id' | 'createdAt' | 'order'> & {
+    id?: string;
+    editScope?: 'from_now' | 'all';
+    effectiveFromDate?: string;
+  }) => void;
 }
 
 const COLORS = ['emerald', 'sky', 'indigo', 'amber', 'rose', 'teal', 'violet', 'orange'];
@@ -20,12 +25,17 @@ export function HabitFormModal({
   initialHabit,
   goals = [],
   categories = [],
+  effectiveDateKey,
   onClose,
   onOpenCategoryManager,
   onSave,
 }: HabitFormModalProps) {
   const [title, setTitle] = useState(initialHabit?.title || '');
   const [description, setDescription] = useState(initialHabit?.description || '');
+  const [editScope, setEditScope] = useState<'from_now' | 'all'>('from_now');
+  const [effectiveFromDate, setEffectiveFromDate] = useState<string>(
+    effectiveDateKey || initialHabit?.startDate || getTodayKey()
+  );
   const defaultCatId = initialHabit?.category || categories[0]?.id || 'productivity';
   const defaultCatObj = categories.find((c) => c.id === defaultCatId);
   const [category, setCategory] = useState<HabitCategory>(defaultCatId);
@@ -97,6 +107,8 @@ export function HabitFormModal({
       startDate: !isOneTime ? startDate : undefined,
       goalId: goalId || undefined,
       cue: cue.trim() || undefined,
+      editScope: initialHabit ? editScope : undefined,
+      effectiveFromDate: initialHabit ? effectiveFromDate : undefined,
     });
   };
 
@@ -127,6 +139,62 @@ export function HabitFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Edit Scope Selector: When editing, allow applying only ahead from that day onwards */}
+          {initialHabit && (
+            <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-bold text-neutral-200 flex items-center gap-1.5">
+                  <span>Edit Scope & Timeline</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-neutral-400">Effective from:</span>
+                  <input
+                    type="date"
+                    value={effectiveFromDate}
+                    onChange={(e) => setEffectiveFromDate(e.target.value)}
+                    className="bg-neutral-900 border border-neutral-750 rounded px-1.5 py-0.5 text-[11px] font-mono text-neutral-200 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setEditScope('from_now')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    editScope === 'from_now'
+                      ? 'bg-emerald-500/15 border-emerald-500/60 text-neutral-100 ring-1 ring-emerald-500/30'
+                      : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <span className="font-bold text-emerald-400 block text-xs">
+                    ⚡ Only from {effectiveFromDate} ahead
+                  </span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-snug">
+                    Previous days remain preserved with past logs; only upcoming days reflect this edit
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditScope('all')}
+                  className={`p-2.5 rounded-lg border text-left transition-all ${
+                    editScope === 'all'
+                      ? 'bg-emerald-500/15 border-emerald-500/60 text-neutral-100 ring-1 ring-emerald-500/30'
+                      : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <span className="font-bold text-neutral-300 block text-xs">
+                    🔄 All days (Past & Ahead)
+                  </span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-snug">
+                    Updates task globally across the entire timeline
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Title */}
           <div>
             <label className="block text-xs font-semibold text-neutral-300 mb-1">

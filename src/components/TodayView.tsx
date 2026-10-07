@@ -358,32 +358,6 @@ export function TodayView({
                 <ArrowRight className="w-3 h-3 text-neutral-600 group-hover:text-emerald-400 transition-colors" />
               </button>
 
-              {onGoToTimerTab && (
-                <button
-                  onClick={onGoToTimerTab}
-                  className="p-2.5 rounded-lg bg-neutral-950 border border-neutral-800 hover:border-indigo-500/50 text-neutral-300 hover:text-indigo-300 transition-all text-left flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span className="truncate font-semibold">Timer</span>
-                  </div>
-                  <ArrowRight className="w-3 h-3 text-neutral-600 group-hover:text-indigo-400 transition-colors" />
-                </button>
-              )}
-
-              {onGoToMindsetTab && (
-                <button
-                  onClick={onGoToMindsetTab}
-                  className="p-2.5 rounded-lg bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 text-neutral-300 hover:text-purple-300 transition-all text-left flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <Brain className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                    <span className="truncate font-semibold">Mindset</span>
-                  </div>
-                  <ArrowRight className="w-3 h-3 text-neutral-600 group-hover:text-purple-400 transition-colors" />
-                </button>
-              )}
-
               {onGoToAnalyticsTab && (
                 <button
                   onClick={onGoToAnalyticsTab}

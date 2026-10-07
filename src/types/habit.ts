@@ -86,6 +86,7 @@ export interface GoalNote {
 export interface Goal {
   id: string;
   title: string;
+  subheading?: string; // Shorter subheading/tagline below main heading
   description?: string;
   category: HabitCategory;
   color: string;

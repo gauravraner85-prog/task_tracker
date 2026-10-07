@@ -4,6 +4,7 @@ import { Rocket } from 'lucide-react';
 interface ProgressRocketWidgetProps {
   userName?: string | null;
   title?: string;
+  subheading?: string;
   subtitle?: string;
   completed: number;
   total: number;
@@ -14,7 +15,8 @@ interface ProgressRocketWidgetProps {
 export function ProgressRocketWidget({
   userName,
   title,
-  subtitle = 'Building mastery one problem at a time — keep the momentum going!',
+  subheading,
+  subtitle,
   completed,
   total,
   progressLabel = 'Total progress',
@@ -35,22 +37,34 @@ export function ProgressRocketWidget({
   const displayName = userName ? userName.split(' ')[0] : 'Champion';
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-5 space-y-4 shadow-md select-none relative overflow-hidden">
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-5 sm:p-6 space-y-4 shadow-md select-none relative overflow-hidden">
       {/* Subtle green ambient accent on right border like the reference image */}
       <div className="absolute right-0 top-3 bottom-3 w-1 bg-emerald-500 rounded-l-full" />
 
-      {/* Top Header: Rocket icon + Greeting */}
-      <div className="flex items-start gap-3.5">
-        <div className="w-11 h-11 rounded-2xl bg-emerald-950/70 border border-emerald-500/50 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
+      {/* Top Header: Rocket icon + Main Heading + Subheading */}
+      <div className="flex items-start gap-4">
+        <div className="w-11 h-11 rounded-2xl bg-emerald-950/70 border border-emerald-500/50 flex items-center justify-center text-emerald-400 shadow-sm shrink-0 mt-0.5">
           <Rocket className="w-5 h-5 fill-emerald-400/30" />
         </div>
-        <div className="min-w-0 pr-2">
-          <h3 className="text-base font-bold text-neutral-100 tracking-tight truncate">
+        <div className="min-w-0 flex-1 pr-2">
+          {/* Main Target Heading: BIGGER, BOLD, HIGH-CONTRAST */}
+          <h3 className="text-xl sm:text-2xl font-black text-neutral-100 tracking-tight leading-snug break-words">
             {title || `Keep pushing, ${displayName}!`}
           </h3>
-          <p className="text-xs text-neutral-400 leading-snug mt-0.5">
-            {subtitle}
-          </p>
+
+          {/* Subheading: slightly shorter / smaller than main heading */}
+          {subheading && (
+            <p className="text-xs sm:text-sm font-semibold text-emerald-400/90 leading-snug mt-1">
+              {subheading}
+            </p>
+          )}
+
+          {/* Optional description/subtitle */}
+          {subtitle && subtitle !== subheading && (
+            <p className="text-xs text-neutral-400 leading-relaxed mt-1">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
 

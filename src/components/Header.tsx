@@ -61,11 +61,10 @@ export function Header({
 
   const navItems = [
     { id: 'today' as const, label: 'Tasks' },
-    { id: 'goals' as const, label: '3-Month Targets' },
+    { id: 'goals' as const, label: 'Targets' },
     { id: 'week' as const, label: 'Weekly Matrix' },
     { id: 'month' as const, label: 'Monthly Heatmap' },
     { id: 'analytics' as const, label: 'Analytics' },
-    { id: 'mindset' as const, label: 'Mindset & Visuals' },
   ];
 
   return (

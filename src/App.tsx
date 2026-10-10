@@ -870,6 +870,7 @@ export default function App() {
                 saveGoalToFirestore(currentUser.uid, targetGoal);
               }
             }}
+            onGoToAnalyticsTab={() => setCurrentTab('analytics')}
           />
         )}
 

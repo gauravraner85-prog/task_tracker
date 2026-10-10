@@ -3,6 +3,8 @@ import { Habit, HabitEntry, Goal } from '../types/habit';
 import { calculateHabitStats, calculateDayOfWeekBreakdown, calculateOverallStats } from '../utils/analytics';
 import { calculateGoalAnalytics } from '../utils/goalAnalytics';
 import { CompletionTrendChart } from './CompletionTrendChart';
+import { TargetDayProgressGraph } from './TargetDayProgressGraph';
+import { parseDateKey, getTodayKey } from '../utils/date';
 import { Flame, Target, TrendingUp, Award, Clock, Activity, CheckCircle2, BarChart3, ListTodo } from 'lucide-react';
 
 interface AnalyticsViewProps {
@@ -14,10 +16,27 @@ interface AnalyticsViewProps {
 
 export function AnalyticsView({ habits, goals = [], entries, onOpenNewHabit }: AnalyticsViewProps) {
   const [activeTab, setActiveTab] = useState<'tasks' | 'targets'>('tasks');
+  const [selectedGoalId, setSelectedGoalId] = useState<string>(goals[0]?.id || '');
+  const [inspectedDay, setInspectedDay] = useState<number>(1);
 
   const activeHabits = habits.filter((h) => !h.archived);
   const overall = calculateOverallStats(habits, entries);
   const dayBreakdown = calculateDayOfWeekBreakdown(habits, entries);
+
+  // Selected target for day-wise graph
+  const selectedGoal = goals.find((g) => g.id === selectedGoalId) || goals[0];
+  const startDateObj = selectedGoal ? parseDateKey(selectedGoal.startDate) : new Date();
+  const targetDateObj = selectedGoal ? parseDateKey(selectedGoal.targetDate) : new Date();
+  const totalDays = selectedGoal
+    ? Math.max(1, Math.round((targetDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+    : 30;
+  const todayObj = parseDateKey(getTodayKey());
+  const currentDayIndex = selectedGoal
+    ? Math.min(
+        totalDays,
+        Math.max(1, Math.round((todayObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+      )
+    : 1;
 
   // Individual habit stats
   const habitStatsList = activeHabits.map((h) => ({
@@ -218,6 +237,44 @@ export function AnalyticsView({ habits, goals = [], entries, onOpenNewHabit }: A
       ) : (
         /* ================= TARGETS ANALYTICS ================= */
         <div className="space-y-6">
+          {/* Day-by-Day Target Progress & Improvement Graph */}
+          {selectedGoal && (
+            <div className="space-y-3">
+              {goals.length > 1 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  <span className="text-xs text-neutral-400 font-mono shrink-0">Select Target:</span>
+                  {goals.map((g) => {
+                    const isSelected = g.id === selectedGoal.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setSelectedGoalId(g.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors border ${
+                          isSelected
+                            ? 'bg-neutral-800 border-emerald-500 text-white font-bold'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {g.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <TargetDayProgressGraph
+                goal={selectedGoal}
+                habits={habits}
+                entries={entries}
+                currentDayIndex={currentDayIndex}
+                totalDays={totalDays}
+                inspectedDay={inspectedDay}
+                onSelectDay={(dayNum) => setInspectedDay(dayNum)}
+              />
+            </div>
+          )}
+
           {/* Target Milestone Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-5 space-y-1">

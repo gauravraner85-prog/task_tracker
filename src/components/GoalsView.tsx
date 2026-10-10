@@ -51,6 +51,7 @@ interface GoalsViewProps {
   onToggleComplete: (habit: Habit, value?: number, dateKey?: string) => void;
   onSaveGoalNotes?: (goalId: string, noteText: string) => void;
   onSaveHabitNote?: (habitId: string, noteText: string, dateKey?: string) => void;
+  onGoToAnalyticsTab?: () => void;
 }
 
 export function GoalsView({
@@ -68,6 +69,7 @@ export function GoalsView({
   onToggleComplete,
   onSaveGoalNotes,
   onSaveHabitNote,
+  onGoToAnalyticsTab,
 }: GoalsViewProps) {
   const activeGoals = goals.filter((g) => g.status === 'active');
   const [selectedGoalId, setSelectedGoalId] = useState<string>(
@@ -222,6 +224,18 @@ export function GoalsView({
             </>
           )}
 
+          {onGoToAnalyticsTab && (
+            <button
+              type="button"
+              onClick={onGoToAnalyticsTab}
+              title="View Day-Wise Progress Graph in Analytics"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 rounded-lg text-xs font-semibold transition-colors"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Day-Wise Graph ↗</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenNewGoal}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold rounded-lg text-xs transition-colors shrink-0 shadow-sm"
@@ -232,106 +246,10 @@ export function GoalsView({
         </div>
       </div>
 
-      {/* 1. HERO TARGET SHOWCASE BANNER (BIGGER, VISIBLE, 2 HEADERS: MAIN HEADING + SUBHEADING) */}
-      <div className="p-5 sm:p-6 rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900/90 to-neutral-950 shadow-md relative overflow-hidden">
-        {/* Subtle ambient accent glow */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2.5 max-w-2xl">
-            {/* Target Status & Category Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono font-bold">
-                <Target className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{totalDays} Days Target</span>
-              </span>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-200 border border-neutral-700 font-semibold">
-                Day {currentDayIndex} of {totalDays}
-              </span>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-neutral-850 text-neutral-400 border border-neutral-750">
-                {currentGoal.startDate} → {currentGoal.targetDate}
-              </span>
-            </div>
-
-            {/* 2 HEADERS: Main Heading (Bigger) & Subheading (Shorter below it) */}
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                {currentGoal.title}
-              </h1>
-              {currentGoal.subheading ? (
-                <p className="text-sm sm:text-base font-medium text-emerald-400/90 mt-1 leading-snug">
-                  {currentGoal.subheading}
-                </p>
-              ) : currentGoal.description ? (
-                <p className="text-sm text-neutral-300 mt-1 leading-snug">
-                  {currentGoal.description}
-                </p>
-              ) : null}
-            </div>
-
-            {/* Target Metric, Streak, & Pace Summary */}
-            <div className="flex items-center gap-3 pt-0.5 text-xs text-neutral-400 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-400" />
-                <span>Streak: <strong className="text-amber-300 font-mono font-bold">{targetStreak} Days</strong></span>
-              </div>
-              <span>·</span>
-              <div>
-                <span>Goal Volume: <strong className="text-neutral-200 font-mono font-bold">{currentGoal.targetMetricCount} {currentGoal.metricUnit}</strong></span>
-              </div>
-              <span>·</span>
-              <div>
-                <span>Completion: <strong className="text-emerald-400 font-mono font-bold">{analytics.percentComplete}%</strong></span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Target Progress Ring / Actions */}
-          <div className="flex md:flex-col items-center md:items-end justify-between gap-3 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-neutral-800">
-            <div className="text-left md:text-right">
-              <span className="text-[10px] font-mono uppercase text-neutral-500 block">Total Target Progress</span>
-              <div className="text-2xl sm:text-3xl font-mono font-black text-emerald-400">
-                {analytics.currentProgress} <span className="text-xs text-neutral-400 font-normal">/ {currentGoal.targetMetricCount} {currentGoal.metricUnit}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onEditGoal(currentGoal)}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Target</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenNewHabitForGoal(currentGoal.id, inspectedDateKey)}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                <span>+ Add Task to Day {inspectedDay}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. DAY-WISE TARGET PROGRESS & IMPROVEMENT GRAPH (30-DAY VELOCITY CURVE & DAY-BY-DAY EXECUTION) */}
-      <TargetDayProgressGraph
-        goal={currentGoal}
-        habits={habits}
-        entries={entries}
-        currentDayIndex={currentDayIndex}
-        totalDays={totalDays}
-        inspectedDay={inspectedDay}
-        onSelectDay={(dayNum) => setInspectedDay(dayNum)}
-      />
-
       {/* 2-COLUMN LAYOUT:
           - Left/Middle (7 cols): Day Details & Tasks in Middle Screen
           - Right Sidebar (5 cols):
-              1. Keep Pushing Progress Card matching reference image
+              1. Target Section (Keep Pushing Progress Card with BIGGER Main Heading & Subheading)
               2. Timeline Chain ({totalDays} Days)
       */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -522,27 +440,6 @@ export function GoalsView({
                           </button>
                         </div>
                       </div>
-
-                      {/* Note Preview if note exists and editor is collapsed */}
-                      {currentNote && !isNoteExpanded && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedNoteHabitId(habit.id);
-                            setDraftNoteText(currentNote);
-                          }}
-                          className="mt-2.5 text-left w-full px-2.5 py-1.5 rounded-lg bg-neutral-950/70 border border-neutral-800 hover:border-amber-500/40 text-neutral-300 text-[11px] flex items-start gap-1.5 transition-all group"
-                        >
-                          <FileText className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" />
-                          <span className="line-clamp-2 italic text-neutral-300 group-hover:text-amber-200 flex-1">
-                            {currentNote}
-                          </span>
-                          <span className="text-[10px] text-neutral-500 ml-auto shrink-0 group-hover:text-amber-400 font-mono">
-                            Edit Note
-                          </span>
-                        </button>
-                      )}
 
                       {/* Expandable Inline Note Editor */}
                       {isNoteExpanded && (

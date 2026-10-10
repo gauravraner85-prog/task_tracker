@@ -48,13 +48,13 @@ export function ProgressRocketWidget({
         </div>
         <div className="min-w-0 flex-1 pr-2">
           {/* Main Target Heading: BIGGER, BOLD, HIGH-CONTRAST */}
-          <h3 className="text-xl sm:text-2xl font-black text-neutral-100 tracking-tight leading-snug break-words">
+          <h3 className="text-2xl sm:text-3xl font-black text-neutral-100 tracking-tight leading-tight break-words">
             {title || `Keep pushing, ${displayName}!`}
           </h3>
 
-          {/* Subheading: slightly shorter / smaller than main heading */}
+          {/* Subheading: slightly shorter / smaller than main heading, clearly visible */}
           {subheading && (
-            <p className="text-xs sm:text-sm font-semibold text-emerald-400/90 leading-snug mt-1">
+            <p className="text-sm sm:text-base font-semibold text-emerald-400 leading-snug mt-1.5 break-words">
               {subheading}
             </p>
           )}
